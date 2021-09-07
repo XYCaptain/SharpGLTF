@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp3.1;net5.0;net6.0;</TargetFrameworks>
     <AssemblyName>SharpGLTF.Toolkit</AssemblyName>
@@ -8,7 +12,8 @@
     <Version>0.0.4</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>SharpGltfTileExt</PackageId>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>    
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <Import Project="..\PackageInfo.props" />
@@ -22,7 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGLTF.Core\SharpGLTF.Core.csproj" />
-  </ItemGroup>  
-  
+    <ProjectReference Include="..\SharpGLTF.Core\SharpGLTF.Core.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
 </Project>
