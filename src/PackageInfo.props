@@ -3,13 +3,13 @@
 
   <PropertyGroup>
 
-    <Authors>Vicente Penades</Authors>
-    <Copyright>Copyright (c) 2021 Vicente Penades</Copyright>
+    <Authors>Liuxinyu</Authors>
+    <Copyright>Copyright (c) 2021 Liuxinyu</Copyright>
     <Description>SharpGLTF is a C# library for reading and writing glTF2 3D models</Description>
 
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/vpenades/SharpGLTF</RepositoryUrl>    
-    <PackageProjectUrl>https://github.com/vpenades/SharpGLTF</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/XYCaptain/SharpGLTF</RepositoryUrl>    
+    <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF</PackageProjectUrl>
 
     <PackageTags>C# glTF 3D</PackageTags>    
     <PackageIcon>glTF2Sharp.png</PackageIcon>

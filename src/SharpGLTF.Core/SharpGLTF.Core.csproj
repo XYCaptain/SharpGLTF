@@ -8,10 +8,14 @@
     <Version>0.0.1</Version>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!--
+  <PropertyGroup><!--
     <DefineConstants>TRACE;SUPRESSTRYCATCH</DefineConstants>
     -->
+  
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>SharpGltfTileExt</PackageId>
+    <Authors>Lixuinyu</Authors>
+    <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF</PackageProjectUrl>
   </PropertyGroup>
 
   <Import Project="..\PackageInfo.props" />
