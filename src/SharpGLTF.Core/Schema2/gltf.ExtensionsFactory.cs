@@ -79,7 +79,7 @@ namespace SharpGLTF.Schema2
 
             // TODO: check that persistentName has a valid extension name.
 
-            _Extensions.Add( (persistentName, typeof(TParent), typeof(TExtension)) );
+            _Extensions.Add((persistentName, typeof(TParent), typeof(TExtension)));
         }
 
         #endregion
@@ -153,6 +153,7 @@ namespace SharpGLTF.Schema2
             this._extensionsUsed.AddRange(used);
 
             _SetExtensionUsage("KHR_mesh_quantization", this._extensionsUsed.Contains("KHR_mesh_quantization"), true);
+            _SetExtensionUsage("EXT_feature_metadata", this._extensionsUsed.Contains("EXT_feature_metadata"), true);
         }
 
         internal IEnumerable<string> GatherUsedExtensions()

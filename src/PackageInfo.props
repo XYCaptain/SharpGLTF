@@ -5,13 +5,13 @@
 
     <Authors>Liuxinyu</Authors>
     <Copyright>Copyright (c) 2021 Liuxinyu</Copyright>
-    <Description>SharpGLTF is a C# library for reading and writing glTF2 3D models</Description>
+    <Description>SharpGltfTileExt is Based on SharpGLTF.SharpGLTF is a C# library for reading and writing glTF2 3D models</Description>
 
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/XYCaptain/SharpGLTF</RepositoryUrl>    
     <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF</PackageProjectUrl>
 
-    <PackageTags>C# glTF 3D</PackageTags>    
+    <PackageTags>C# glTF 3D Tile Extension</PackageTags>    
     <PackageIcon>glTF2Sharp.png</PackageIcon>
 
     <DocumentationFile>bin\$(Configuration)\$(AssemblyName).xml</DocumentationFile>
@@ -27,8 +27,5 @@
   <ItemGroup>
     <None Include="$(MsBuildThisFileDirectory)..\build\Icons\glTF2Sharp.png" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
-
-  
-
 
 </Project>
