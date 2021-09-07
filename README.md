@@ -7,11 +7,15 @@
 ---
 
 ### Overview
+Fork and Update from __SharpGLTF__(a 100% .NET Standard library), which designed to support
+[Khronos Group glTF 2.0](https://github.com/KhronosGroup/glTF) file format.
+
+### RoadMap
 - [x] Update to Net 6.0
 - [ ] Add Ext_feature_metadata
 
-Fork and Update from __SharpGLTF__(a 100% .NET Standard library), which designed to support
-[Khronos Group glTF 2.0](https://github.com/KhronosGroup/glTF) file format.
+
+
 
 ### Appendix A - [SharpGLTF](https://github.com/vpenades/SharpGLTF)
 #### Quickstart
