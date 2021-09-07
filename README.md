@@ -13,7 +13,9 @@ Fork and Update from __SharpGLTF__(a 100% .NET Standard library), which designed
 ### RoadMap
 - [x] Update to Net 6.0
 - [ ] Add Ext_feature_metadata
-
+```c#
+model.UseExtension<EXT_feature_metadata>();
+```
 
 
 
