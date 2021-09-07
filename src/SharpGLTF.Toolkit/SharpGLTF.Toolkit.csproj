@@ -6,7 +6,9 @@
     <RootNamespace>SharpGLTF</RootNamespace>    
     <LangVersion>10.0</LangVersion>
     <Version>0.0.4</Version>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>    
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>SharpGltfTileExt</PackageId>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>    
   </PropertyGroup>
 
   <Import Project="..\PackageInfo.props" />
