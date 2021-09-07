@@ -14,13 +14,9 @@ jobs:
         with:
           dotnet-version: '6.0.x'
           include-prerelease: true
-      - name: Install dependencies
-        run: dotnet restore
-      # Publish
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
       - name: publish on version change
-        uses: brandedoutcast/publish-nuget@v2.5.5
+        id: publish_nuget
+        uses: rohith/publish-nuget@v2.5.5
         with:
           # Filepath of the project to be packaged, relative to root of repository
           PROJECT_FILE_PATH: src/SharpGLTF.Core/SharpGLTF.Core.csproj
