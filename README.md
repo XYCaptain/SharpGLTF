@@ -3,12 +3,15 @@
 </p>
 
 ![GitHub](https://img.shields.io/github/license/XYCaptain/SharpGltf)
-[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/SharpGltfTileExt)](https://www.nuget.org/packages/SharpGltfTileExt/0.0.4)
 ---
-
 ### Overview
 Fork and Update from __SharpGLTF__(a 100% .NET Standard library), which designed to support
 [Khronos Group glTF 2.0](https://github.com/KhronosGroup/glTF) file format.
+
+### Nuget Packages
+|Package|Version|
+|-|-|
+|[__SharpGltfTileExt__](https://www.nuget.org/packages/SharpGltfTileExt)|[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/SharpGltfTileExt)](https://www.nuget.org/packages/SharpGltfTileExt/0.0.4)|
 
 ### RoadMap
 - [x] Update to Net 6.0
@@ -19,8 +22,8 @@ model.UseExtension<EXT_feature_metadata>();
 
 
 
-### Appendix A - [SharpGLTF](https://github.com/vpenades/SharpGLTF)
-#### Quickstart
+#### Appendix A - [SharpGLTF](https://github.com/vpenades/SharpGLTF)
+##### Quickstart
 
 A simple example of loading a glTF file and saving it as GLB:
 
@@ -30,7 +33,7 @@ model.SaveGLB("model.glb");
 ```
 More examples can be found [here](examples) and in the Test project.
 
-#### Nuget Packages
+##### Nuget Packages
 
 |Package|Version|
 |-|-|
@@ -42,7 +45,7 @@ The library is divided into two main packages:
 - [__SharpGLTF.Core__](src/SharpGLTF.Core/README.md) provides read/write file support, and low level access to the glTF models.
 - [__SharpGLTF.Toolkit__](src/SharpGLTF.Toolkit/README.md) provides convenient utilities to help create, manipulate and evaluate glTF models.
 
-### Appendix B
+#### Appendix B
 - [Khronos Group glTF-CSharp-Loader](https://github.com/KhronosGroup/glTF-CSharp-Loader)
 - [Khronos Group UnityGLTF](https://github.com/KhronosGroup/UnityGLTF)
 
