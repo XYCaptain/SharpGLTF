@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net5.0;net6.0;</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>    
@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\SharpGLTF.Core\SharpGLTF.Core.csproj" />
     <ProjectReference Include="..\..\src\SharpGLTF.Toolkit\SharpGLTF.Toolkit.csproj" />
   </ItemGroup>
 

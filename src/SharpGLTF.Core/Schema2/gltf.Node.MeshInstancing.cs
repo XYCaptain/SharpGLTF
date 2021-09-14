@@ -130,6 +130,7 @@ namespace SharpGLTF.Schema2
         public MeshGpuInstancing UseGpuInstancing()
         {
             var ext = GetGpuInstancing();
+
             if (ext == null)
             {
                 ext = new MeshGpuInstancing(this);

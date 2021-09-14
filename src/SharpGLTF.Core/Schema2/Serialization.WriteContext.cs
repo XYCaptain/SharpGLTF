@@ -290,6 +290,7 @@ namespace SharpGLTF.Schema2
                 if (_NoCloneWatchdog) throw new InvalidOperationException($"Current settings require creating a densive copy before model modification, but calling {nameof(MODEL.DeepClone)} is not allowed with the current settings.");
 
                 model = model.DeepClone();
+
             }
 
             if (imagesAsBufferViews) model.MergeImages();
