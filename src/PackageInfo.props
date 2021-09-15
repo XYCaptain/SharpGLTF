@@ -8,8 +8,8 @@
     <Description>SharpGltfTileExt is Based on SharpGLTF.SharpGLTF is a C# library for reading and writing glTF2 3D models</Description>
 
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/XYCaptain/SharpGLTF</RepositoryUrl>    
-    <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/XYCaptain/SharpGLTF-TileExt</RepositoryUrl>    
+    <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF-TileExt</PackageProjectUrl>
 
     <PackageTags>C# glTF 3D Tile Extension</PackageTags>    
     <PackageIcon>glTF2Sharp.png</PackageIcon>
