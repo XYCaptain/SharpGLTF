@@ -50,7 +50,7 @@ namespace SharpGLTF.Extensions
             for (int i = 0; i < 100; i++)
             {
                 fids.Add(i);
-                bs.Add(new building() { height = i, id = i });
+                bs.Add(new building() { height = i});
                 ass.Add(AffineTransform.CreateFromAny(null, new Vector3(1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f), null, new Vector3(10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble())));
             }
 
@@ -72,7 +72,5 @@ namespace SharpGLTF.Extensions
     {
         [JsonProperty("height")]
         public float height { get; set; }
-        [JsonProperty("id")]
-        public int id { get; set; }
     }
 }
