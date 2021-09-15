@@ -9,7 +9,7 @@
     <AssemblyName>SharpGLTF.Toolkit</AssemblyName>
     <RootNamespace>SharpGLTF</RootNamespace>    
     <LangVersion>10.0</LangVersion>
-    <Version>0.0.6</Version>
+    <Version>0.0.7</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>SharpGltfTileExt</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -31,5 +31,4 @@
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
   </ItemGroup>
-
 </Project>

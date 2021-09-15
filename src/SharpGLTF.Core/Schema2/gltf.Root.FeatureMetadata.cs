@@ -76,11 +76,11 @@ namespace SharpGLTF.Schema2
                     switch (reader.TokenType)
                     {
                         case JsonTokenType.Null: break;
-                        case JsonTokenType.String: str.Append(reader.GetString()); break;
+                        case JsonTokenType.String: str.Append($"\"{reader.GetString()}\""); isp = true; break;
                         case JsonTokenType.PropertyName: if (isp) str.AppendLine(","); isp = false; str.Append($"\"{reader.GetString()}\"" + ":"); break;
                         case JsonTokenType.True: str.Append("true"); isp = true; break;
                         case JsonTokenType.False: str.Append("false"); isp = true; break;
-                        case JsonTokenType.Number: str.Append(reader.GetDecimal().ToString(System.Globalization.CultureInfo.InvariantCulture)); break;
+                        case JsonTokenType.Number: str.Append(reader.GetDecimal().ToString(System.Globalization.CultureInfo.InvariantCulture)); isp = true; break;
                         case JsonTokenType.StartObject:
                             str.AppendLine("{");
                             level++;
