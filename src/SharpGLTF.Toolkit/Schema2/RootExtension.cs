@@ -105,16 +105,5 @@ namespace SharpGLTF.Schema2
 
             return metadata;
         }
-
-        //public static dynamic Cast<T>(this Type type, object data)
-        //{
-        //    var DataParam = Expression.Parameter(typeof(object), "data");
-        //    var Body = Expression.Block(type, Expression.Convert(Expression.Convert(DataParam, data.GetType()), type));
-        //    var ff = typeof(Unsafe).GetMethod("Unbox");
-        //    var Run = Expression.Lambda(type, Body, DataParam).Compile();
-        //    var ret = Run.DynamicInvoke(data);
-        //    UnaryExpression expression = Expression.Unbox(DataParam, type);
-        //    return ret;
-        //}
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using Newtonsoft.Json;
@@ -52,22 +53,108 @@ namespace SharpGLTF.Schema2
                 }
 
                 writer.WriteEndObject();
-
                 writer.WriteEndObject();
             }
 
             writer.WriteEndObject();
         }
 
-        //TODO：读取未写
-        //protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
-        //{
-        //    switch (jsonPropertyName)
-        //    {
-        //        case "attributes": DeserializePropertyDictionary<Int32>(ref reader, _properties); break;
-        //        default: base.DeserializeProperty(jsonPropertyName, ref reader); break;
-        //    }
-        //}
+        protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
+        {
+            if (jsonPropertyName == "schema")
+            {
+                int level = int.MaxValue;
+                bool isp = false;
+                StringBuilder str = new StringBuilder();
+                while (reader.Read())
+                {
+                    if (level == int.MaxValue)
+                        level = 0;
+                    else if (level == 0)
+                        break;
+
+                    switch (reader.TokenType)
+                    {
+                        case JsonTokenType.Null: break;
+                        case JsonTokenType.String: str.Append(reader.GetString()); break;
+                        case JsonTokenType.PropertyName: if (isp) str.AppendLine(","); isp = false; str.Append($"\"{reader.GetString()}\"" + ":"); break;
+                        case JsonTokenType.True: str.Append("true"); isp = true; break;
+                        case JsonTokenType.False: str.Append("false"); isp = true; break;
+                        case JsonTokenType.Number: str.Append(reader.GetDecimal().ToString(System.Globalization.CultureInfo.InvariantCulture)); break;
+                        case JsonTokenType.StartObject:
+                            str.AppendLine("{");
+                            level++;
+                            continue;
+                        case JsonTokenType.EndObject:
+                            str.AppendLine("\r\n}");
+                            level--;
+                            continue;
+                        default:
+                            break;
+                    }
+                }
+                _schemastring = str.ToString();
+            }
+
+            if (reader.GetString() == "featuretables")
+            {
+                int level = 1;
+                string tablename = "";
+                int count = 0;
+
+                while (level > 0 && reader.Read())
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonTokenType.PropertyName:
+
+                            if (reader.GetString() == "class")
+                            {
+                                reader.Read();
+                                tablename = reader.GetString();
+                                _featuretables.Add(tablename, new Dictionary<string, int>());
+                                break;
+                            }
+
+                            if (reader.GetString() == "count")
+                            {
+                                reader.Read();
+                                count = reader.GetInt32();
+                                break;
+                            }
+
+                            if (reader.GetString() == "properties")
+                            {
+                                reader.Read();
+                                for (int i = 0; i < count; i++)
+                                {
+                                    reader.Read();
+                                    var pname = reader.GetString();
+                                    reader.Read(); reader.Read(); reader.Read();
+                                    var index = reader.GetInt32();
+                                    _featuretables[tablename].Add(pname, index);
+                                    reader.Read();
+                                }
+
+                                reader.Read();
+                                break;
+                            }
+
+                            break;
+                        case JsonTokenType.StartObject:
+                            level++;
+                            break;
+                        case JsonTokenType.EndObject:
+                            level--;
+                            if (level == 1)
+                                return;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
     }
 
     public partial class FeatureMetadata

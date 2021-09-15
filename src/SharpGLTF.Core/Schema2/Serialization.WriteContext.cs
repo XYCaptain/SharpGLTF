@@ -288,9 +288,7 @@ namespace SharpGLTF.Schema2
             {
                 // cloning check is done to prevent cloning from entering in an infinite loop where each clone attempt triggers another clone request.
                 if (_NoCloneWatchdog) throw new InvalidOperationException($"Current settings require creating a densive copy before model modification, but calling {nameof(MODEL.DeepClone)} is not allowed with the current settings.");
-
                 model = model.DeepClone();
-
             }
 
             if (imagesAsBufferViews) model.MergeImages();

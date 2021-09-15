@@ -939,14 +939,16 @@ namespace SharpGLTF.Scenes
                 bs1.Add(new building2() { height = i, id = i });
                 ass.Add(AffineTransform.CreateFromAny(null, new Vector3(1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f), null, new Vector3(10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble())));
             }
-            model.LogicalNodes.First().UseGpuInstancing().WithInstanceAccessors(ass).WithInstanceCustomAccessor("_FEATURE_ID_0", fids);
+            model.LogicalNodes.First()/*.UseGpuInstancing().WithInstanceAccessors(ass).WithInstanceCustomAccessor("_FEATURE_ID_0", fids)*/;
+            //model.LogicalNodes.First().UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
+            //var f = model.UseFeatureMetadata();
+            //f.WithFeatureAccessors(bs);
+            //f.WithFeatureAccessors(bs1);
+            //f.SetShcema("{\"123\":213}");
+            //model.SetExtension(f);
 
-            var f = model.UseFeatureMetadata();
-            f.WithFeatureAccessors(bs);
-            f.WithFeatureAccessors(bs1);
-            f.SetShcema("{\"123\":213}");
-            model.SetExtension(f);
             model.SaveGLTF(@$"preview.gltf", new WriteSettings() { MergeBuffers = false });
+            model.SaveGLB(@$"C:\Users\Liuxinyu\Documents\cesium\Specs\Data\Models\GltfLoader\BuildingsMetadata\glTF\preview.glb", new WriteSettings() { MergeBuffers = false });
         }
     }
 
