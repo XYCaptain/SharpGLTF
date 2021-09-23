@@ -58,6 +58,8 @@ namespace SharpGLTF.Schema2
             Guard.NotNull(instances, nameof(instances));
             var tablekey = instances.GetType().GenericTypeArguments.First().Name;
 
+            metadata.SetInstancesCount(tablekey, instances.Count);
+
             foreach (var pop in typeof(T).GetProperties())
             {
                 if (pop.PropertyType == typeof(int))

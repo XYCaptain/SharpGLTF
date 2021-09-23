@@ -14,7 +14,7 @@ namespace SharpGLTF.Schema2
     {
         private string? _schemastring;
         private Dictionary<String, Dictionary<String, Int32>> _featuretables;
-
+        private Dictionary<String, Int32> _featuretablescounts;
         protected override void SerializeProperties(Utf8JsonWriter writer)
         {
             Guard.NotNull(writer, nameof(writer));
@@ -38,7 +38,7 @@ namespace SharpGLTF.Schema2
                 writer.WritePropertyName("class");
                 writer.WriteStringValue(table.Key);
                 writer.WritePropertyName("count");
-                writer.WriteNumberValue(table.Value.Count);
+                writer.WriteNumberValue(_featuretablescounts[table.Key]);
 
                 writer.WritePropertyName("properties");
                 writer.WriteStartObject();
@@ -167,6 +167,7 @@ namespace SharpGLTF.Schema2
         {
             _Owner = root;
             _featuretables = new Dictionary<String, Dictionary<String, Int32>>();
+            _featuretablescounts = new Dictionary<string, int>();
         }
 
         public int Count => _GetCount();
@@ -202,7 +203,13 @@ namespace SharpGLTF.Schema2
 
             return _Owner.LogicalAccessors[idx];
         }
-
+        public void SetInstancesCount(string tablekey, int count)
+        {
+            if (!_featuretablescounts.TryGetValue(tablekey, out var _))
+            {
+                _featuretablescounts.Add(tablekey, count);
+            }
+        }
         public void SetAccessor(string tablekey, string attributeKey, Accessor accessor)
         {
             Guard.NotNullOrEmpty(attributeKey, nameof(attributeKey));
