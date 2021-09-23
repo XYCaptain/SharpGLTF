@@ -10,7 +10,7 @@ using SharpGLTF.Collections;
 
 namespace SharpGLTF.Schema2
 {
-    public partial class Node_FeatureMetadata : ExtraProperties
+    public partial class FeatureMetadataInstancer : ExtraProperties
     {
         private Dictionary<string, string> _featuretables;
 
@@ -89,14 +89,14 @@ namespace SharpGLTF.Schema2
         }
     }
 
-    public partial class Node_FeatureMetadata
+    public partial class FeatureMetadataInstancer
     {
-        private readonly Node _Owner;
+        private readonly MeshGpuInstancing _Owner;
 
-        public Node LogicalParent => _Owner;
-        public Node VisualParent => _Owner;
+        public MeshGpuInstancing LogicalParent => _Owner;
+        public MeshGpuInstancing VisualParent => _Owner;
 
-        internal Node_FeatureMetadata(Node root)
+        internal FeatureMetadataInstancer(MeshGpuInstancing root)
         {
             _Owner = root;
             _featuretables = new Dictionary<String, String>();
@@ -117,19 +117,19 @@ namespace SharpGLTF.Schema2
         }
     }
 
-    public sealed partial class Node
+    public sealed partial class MeshGpuInstancing
     {
-        public Node_FeatureMetadata GetFeatureMetadata()
+        public FeatureMetadataInstancer GetFeatureMetadata()
         {
-            return this.GetExtension<Node_FeatureMetadata>();
+            return this.GetExtension<FeatureMetadataInstancer>();
         }
 
-        public Node_FeatureMetadata UseFeatureMetadata()
+        public FeatureMetadataInstancer UseFeatureMetadata()
         {
             var ext = GetFeatureMetadata();
             if (ext == null)
             {
-                ext = new Node_FeatureMetadata(this);
+                ext = new FeatureMetadataInstancer(this);
                 this.SetExtension(ext);
             }
 
@@ -138,7 +138,7 @@ namespace SharpGLTF.Schema2
 
         public void RemoveFeatureMetadata()
         {
-            this.RemoveExtensions<Node_FeatureMetadata>();
+            this.RemoveExtensions<FeatureMetadataInstancer>();
         }
     }
 }

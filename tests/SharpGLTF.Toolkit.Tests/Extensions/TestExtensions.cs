@@ -50,12 +50,15 @@ namespace SharpGLTF.Extensions
             for (int i = 0; i < 100; i++)
             {
                 fids.Add(i);
-                bs.Add(new building() { height = i});
+                bs.Add(new building() { height = i });
                 ass.Add(AffineTransform.CreateFromAny(null, new Vector3(1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f), null, new Vector3(10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble())));
             }
 
-            model.LogicalNodes.First().UseGpuInstancing().WithInstanceAccessors(ass).WithInstanceCustomAccessor("_FEATURE_ID_0", fids);
-            model.LogicalNodes.First().UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
+            model.LogicalNodes.First()
+                .UseGpuInstancing().WithInstanceAccessors(ass)
+                .WithInstanceCustomAccessor("_FEATURE_ID_0", fids)
+                .UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
+            //model.LogicalNodes.First().UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
 
             var f = model.UseFeatureMetadata();
             f.WithFeatureAccessors(bs);

@@ -120,23 +120,36 @@ namespace SharpGLTF.Schema2
                             {
                                 reader.Read();
                                 count = reader.GetInt32();
+                                _featuretablescounts.Add(tablename, count);
                                 break;
                             }
 
                             if (reader.GetString() == "properties")
                             {
                                 reader.Read();
-                                for (int i = 0; i < count; i++)
+                                System.Diagnostics.Debug.WriteLine(reader.TokenType.ToString());
+                                do
                                 {
                                     reader.Read();
-                                    var pname = reader.GetString();
-                                    reader.Read(); reader.Read(); reader.Read();
-                                    var index = reader.GetInt32();
-                                    _featuretables[tablename].Add(pname, index);
-                                    reader.Read();
-                                }
-
-                                reader.Read();
+                                    System.Diagnostics.Debug.WriteLine(reader.TokenType.ToString());
+                                    if (reader.TokenType == JsonTokenType.PropertyName)
+                                    {
+                                        var pname = reader.GetString();
+                                        System.Diagnostics.Debug.WriteLine(pname);
+                                        reader.Read(); reader.Read(); reader.Read();
+                                        System.Diagnostics.Debug.WriteLine(reader.TokenType.ToString());
+                                        var index = reader.GetInt32();
+                                        _featuretables[tablename].Add(pname, index);
+                                        reader.Read();
+                                        System.Diagnostics.Debug.WriteLine(reader.TokenType.ToString());
+                                        continue;
+                                    }
+                                    if (reader.TokenType == JsonTokenType.EndObject)
+                                    {
+                                        break;
+                                    }
+                                } while (true);
+                                //reader.Read();
                                 break;
                             }
 
@@ -203,6 +216,7 @@ namespace SharpGLTF.Schema2
 
             return _Owner.LogicalAccessors[idx];
         }
+
         public void SetInstancesCount(string tablekey, int count)
         {
             if (!_featuretablescounts.TryGetValue(tablekey, out var _))
@@ -210,6 +224,7 @@ namespace SharpGLTF.Schema2
                 _featuretablescounts.Add(tablekey, count);
             }
         }
+
         public void SetAccessor(string tablekey, string attributeKey, Accessor accessor)
         {
             Guard.NotNullOrEmpty(attributeKey, nameof(attributeKey));
