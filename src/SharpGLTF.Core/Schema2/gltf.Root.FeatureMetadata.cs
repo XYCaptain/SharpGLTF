@@ -26,7 +26,7 @@ namespace SharpGLTF.Schema2
             writer.WritePropertyName("schema");
             writer.WriteRawValue(_schemastring);
 
-            writer.WritePropertyName("featuretables");
+            writer.WritePropertyName("featureTables");
             writer.WriteStartObject();
 
             foreach (var table in _featuretables)
@@ -96,7 +96,7 @@ namespace SharpGLTF.Schema2
                 _schemastring = str.ToString();
             }
 
-            if (reader.GetString() == "featuretables")
+            if (reader.GetString() == "featureTables")
             {
                 int level = 1;
                 string tablename = "";

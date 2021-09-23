@@ -1,9 +1,7 @@
-﻿using System;
+﻿using SharpGLTF.IO;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-
-using SharpGLTF.IO;
 
 namespace SharpGLTF.Schema2
 {
@@ -155,7 +153,8 @@ namespace SharpGLTF.Schema2
             this._extensionsUsed.AddRange(used);
 
             _SetExtensionUsage("KHR_mesh_quantization", this._extensionsUsed.Contains("KHR_mesh_quantization"), true);
-            _SetExtensionUsage("EXT_feature_metadata", this._extensionsUsed.Contains("EXT_feature_metadata"), true);
+            _SetExtensionUsage("EXT_feature_metadata", this._extensionsUsed.Contains("EXT_feature_metadata"), false);
+            _SetExtensionUsage("EXT_mesh_gpu_instancing", this._extensionsUsed.Contains("EXT_mesh_gpu_instancing"), this._extensionsUsed.Contains("EXT_mesh_gpu_instancing"));
         }
 
         internal IEnumerable<string> GatherUsedExtensions()
