@@ -11,7 +11,7 @@ Fork and Update from __SharpGLTF__(a 100% .NET Standard library), which designed
 ### Nuget Packages
 |Package|Version|
 |-|-|
-|[__SharpGltfTileExt__](https://www.nuget.org/packages/SharpGltfTileExt)|[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/SharpGltfTileExt)](https://www.nuget.org/packages/SharpGltfTileExt/0.0.4)|
+|[__SharpGltfTileExt__](https://www.nuget.org/packages/SharpGltfTileExt)|[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/SharpGltfTileExt)](https://www.nuget.org/packages/SharpGltfTileExt)|
 
 ### RoadMap
 - [x] Update to Net 6.0
