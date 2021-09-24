@@ -27,7 +27,9 @@ namespace SharpGLTF.Schema2
             RegisterExtension<Node, _NodePunctualLight>("KHR_lights_punctual");
             RegisterExtension<Node, MeshGpuInstancing>("EXT_mesh_gpu_instancing");
 
-            RegisterExtension<MeshGpuInstancing, FeatureMetadataInstancer>("EXT_feature_metadata");
+            RegisterExtension<MeshGpuInstancing, FeatureMetadataInstancer<MeshGpuInstancing>>("EXT_feature_metadata");
+            RegisterExtension<MeshPrimitive, FeatureMetadataInstancer<MeshPrimitive>>("EXT_feature_metadata");
+            RegisterExtension<Node, FeatureMetadataInstancer<Node>>("EXT_feature_metadata");
 
             RegisterExtension<Material, MaterialUnlit>("KHR_materials_unlit");
             RegisterExtension<Material, MaterialSheen>("KHR_materials_sheen");

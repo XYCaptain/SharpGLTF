@@ -38,8 +38,7 @@ namespace SharpGLTF.Extensions
             var root = new NodeBuilder("root");
             scene.AddRigidMesh(mesh, root);
             var node1 = new NodeBuilder("instance");
-            var root1 = new NodeBuilder("root1");
-            scene.AddRigidMesh(mesh, root1, AffineTransform.CreateFromAny(null, new Vector3(5, 5, 5), null, new Vector3(20, 20, 20)));
+            scene.AddRigidMesh(mesh, node1, AffineTransform.CreateFromAny(null, new Vector3(5, 5, 5), null, new Vector3(20, 20, 20)));
             var model = scene.ToGltf2();
 
             List<AffineTransform> ass = new List<AffineTransform>();
@@ -47,18 +46,21 @@ namespace SharpGLTF.Extensions
             List<object> fids = new List<object>();
             List<building> bs = new List<building>();
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 1; i++)
             {
                 fids.Add(i);
                 bs.Add(new building() { height = i });
                 ass.Add(AffineTransform.CreateFromAny(null, new Vector3(1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f, 1 * (float)rand.NextDouble() + 0.5f), null, new Vector3(10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble(), 10 * (float)rand.NextDouble())));
             }
 
-            model.LogicalNodes.First()
+            model.LogicalNodes.Where(x => x.Name == "instance").FirstOrDefault()
                 .UseGpuInstancing().WithInstanceAccessors(ass)
                 .WithInstanceCustomAccessor("_FEATURE_ID_0", fids)
                 .UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
-            //model.LogicalNodes.First().UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
+
+            model.LogicalNodes.Where(x => x.Name == "root").FirstOrDefault()
+                 .UseFeatureMetadata().SetFeatureData("building", 0);
+
 
             var f = model.UseFeatureMetadata();
             f.WithFeatureAccessors(bs);
@@ -66,8 +68,8 @@ namespace SharpGLTF.Extensions
             f.SetShcema(text);
             model.SetExtension(f);
 
-            model.SaveGLTF(@$"C:\Users\Liuxinyu\Documents\cesium\Specs\Data\Models\GltfLoader\BuildingsMetadata\glTF\preview.gltf", new WriteSettings() { MergeBuffers = false });
-            model.SaveGLB(@$"C:\Users\Liuxinyu\Documents\cesium\Specs\Data\Models\GltfLoader\BuildingsMetadata\glTF\preview.glb", new WriteSettings() { MergeBuffers = false });
+            model.SaveGLTF(@$"preview.gltf", new WriteSettings() { MergeBuffers = false });
+            model.SaveGLB(@$"preview.glb", new WriteSettings() { MergeBuffers = false });
         }
     }
 
@@ -75,5 +77,7 @@ namespace SharpGLTF.Extensions
     {
         [JsonProperty("height")]
         public float height { get; set; }
+        [JsonProperty("height")]
+        public long id { get; set; }
     }
 }

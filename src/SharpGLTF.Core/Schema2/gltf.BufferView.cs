@@ -64,22 +64,22 @@ namespace SharpGLTF.Schema2
         /// <summary>
         /// Gets a value indicating whether this <see cref="BufferView"/> defines a GPU Ready Vertex Buffer.
         /// </summary>
-        public bool IsVertexBuffer              => this._target == BufferMode.ARRAY_BUFFER;
+        public bool IsVertexBuffer => this._target == BufferMode.ARRAY_BUFFER;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="BufferView"/> defines a GPU Ready Index Buffer.
         /// </summary>
-        public bool IsIndexBuffer               => this._target == BufferMode.ELEMENT_ARRAY_BUFFER;
+        public bool IsIndexBuffer => this._target == BufferMode.ELEMENT_ARRAY_BUFFER;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="BufferView"/> defines a general purpose data buffer.
         /// </summary>
-        public bool IsDataBuffer                => this._target == null;
+        public bool IsDataBuffer => this._target == null;
 
         /// <summary>
         /// Gets the number of bytes between the beginnings of successive elements, or Zero.
         /// </summary>
-        public int ByteStride                   => this._byteStride.AsValue(0);
+        public int ByteStride => this._byteStride.AsValue(0);
 
         /// <summary>
         /// Gets the actual bytes defined by this <see cref="BufferView"/>
@@ -217,7 +217,7 @@ namespace SharpGLTF.Schema2
             if (!_byteStride.HasValue) return;
 
             validate
-                .IsAnyOf("Target", _target, null,  BufferMode.ARRAY_BUFFER)
+                .IsAnyOf("Target", _target, null, BufferMode.ARRAY_BUFFER)
                 .IsInRange(nameof(ByteStride), _byteStride.Value, _byteStrideMinimum, _byteStrideMaximum)
                 .IsMultipleOf(nameof(ByteStride), _byteStride.Value, 4);
         }
@@ -280,6 +280,8 @@ namespace SharpGLTF.Schema2
             return buffView;
         }
 
+
+
         /// <summary>
         /// Creates or reuses a <see cref="BufferView"/> instance
         /// at <see cref="ModelRoot.LogicalBufferViews"/>.
@@ -325,7 +327,7 @@ namespace SharpGLTF.Schema2
             Guard.NotNull(buffer, nameof(buffer));
             Guard.MustShareLogicalParent(this, "this", buffer, nameof(buffer));
 
-            var content = new BYTES(buffer.Content, byteOffset, byteLength.AsValue(buffer.Content.Length - byteOffset) );
+            var content = new BYTES(buffer.Content, byteOffset, byteLength.AsValue(buffer.Content.Length - byteOffset));
 
             foreach (var bv in this.LogicalBufferViews)
             {

@@ -230,6 +230,22 @@ namespace SharpGLTF.Schema2
 
         #region Index Buffer API
 
+        /// <summary>
+        /// Associates this <see cref="Accessor"/> with a <see cref="BufferView"/>
+        /// </summary>
+        /// <param name="buffer">The <see cref="BufferView"/> source.</param>
+        /// <param name="bufferByteOffset">The start byte offset within <paramref name="buffer"/>.</param>
+        /// <param name="itemCount">The number of items in the accessor.</param>
+        /// <param name="encoding">The <see cref="IndexEncodingType"/> item encoding.</param>
+        public void SetAttData(BufferView buffer, int bufferByteOffset, int itemCount, IndexEncodingType encoding)
+        {
+            Guard.NotNull(buffer, nameof(buffer));
+            Guard.MustShareLogicalParent(this, buffer, nameof(buffer));
+            Guard.IsFalse(buffer.IsVertexBuffer, nameof(buffer));
+
+            SetData(buffer, bufferByteOffset, itemCount, DimensionType.SCALAR, encoding.ToComponent(), false);
+        }
+
         public void SetIndexData(MemoryAccessor src)
         {
             Guard.NotNull(src, nameof(src));
