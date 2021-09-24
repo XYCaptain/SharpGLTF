@@ -51,6 +51,17 @@ namespace SharpGLTF.Memory
 
     static class EncodedArrayUtils
     {
+        public static void _CopyTo(this IEnumerable<Int64> src, IList<Int64> dst, int dstOffset = 0)
+        {
+            using (var ptr = src.GetEnumerator())
+            {
+                while (dstOffset < dst.Count && ptr.MoveNext())
+                {
+                    dst[dstOffset++] = (Int64)ptr.Current;
+                }
+            }
+        }
+
         public static void _CopyTo(this IEnumerable<Int32> src, IList<UInt32> dst, int dstOffset = 0)
         {
             using (var ptr = src.GetEnumerator())

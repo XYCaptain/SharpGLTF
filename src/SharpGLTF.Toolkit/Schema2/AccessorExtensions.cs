@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
+using System.Linq;
 
 namespace SharpGLTF.Schema2
 {
@@ -19,9 +20,25 @@ namespace SharpGLTF.Schema2
             return accessor;
         }
 
+        public static IEnumerable<Byte> ToBytes(this IReadOnlyList<long> datas)
+        {
+            foreach (var data in datas)
+            {
+                foreach (var _byte in BitConverter.GetBytes(data))
+                {
+                    yield return _byte;
+                }
+            }
+        }
+
         public static unsafe BufferView CreateBufferView<T>(this ModelRoot root, IReadOnlyList<T> data)
             where T : unmanaged
         {
+            if (typeof(T) == typeof(long))
+            {
+                return root.UseBufferView((data as IReadOnlyList<long>).ToBytes().ToArray());
+            }
+
             var view = root.CreateBufferView(sizeof(T) * data.Count);
 
             if (typeof(T) == typeof(int))
@@ -29,7 +46,6 @@ namespace SharpGLTF.Schema2
                 new Memory.IntegerArray(view.Content, IndexEncodingType.UNSIGNED_INT).Fill(data as IReadOnlyList<int>);
                 return view;
             }
-
             if (typeof(T) == typeof(Single))
             {
                 new Memory.ScalarArray(view.Content).Fill(data as IReadOnlyList<Single>);

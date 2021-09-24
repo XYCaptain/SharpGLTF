@@ -18,7 +18,7 @@ namespace SharpGLTF.Schema2
             return metadata;
         }
 
-        public static unsafe FeatureMetadata WithFeatureAccessor<T>(this FeatureMetadata metadata, string table, string attribute, IReadOnlyList<T> values)
+        public static unsafe FeatureMetadata WithFeatureBufferView<T>(this FeatureMetadata metadata, string table, string attribute, IReadOnlyList<T> values)
                where T : unmanaged
         {
             Guard.NotNull(metadata, nameof(metadata));
@@ -26,28 +26,7 @@ namespace SharpGLTF.Schema2
 
             var root = metadata.LogicalParent;
             var view = root.CreateBufferView(values);
-            var accessor = root.CreateAccessor();
-
-            if (typeof(T) == typeof(int))
-            {
-                accessor.SetIndexData(view, 0, values.Count, IndexEncodingType.UNSIGNED_INT);
-            }
-            else
-            {
-                var dt = DimensionType.CUSTOM;
-                if (typeof(T) == typeof(Single)) dt = DimensionType.SCALAR;
-                if (typeof(T) == typeof(Vector2)) dt = DimensionType.VEC2;
-                if (typeof(T) == typeof(Vector3)) dt = DimensionType.VEC3;
-                if (typeof(T) == typeof(Vector4)) dt = DimensionType.VEC4;
-                if (typeof(T) == typeof(Quaternion)) dt = DimensionType.VEC4;
-                if (typeof(T) == typeof(Matrix4x4)) dt = DimensionType.MAT4;
-
-                if (dt == DimensionType.CUSTOM) throw new ArgumentException(typeof(T).Name);
-
-                accessor.SetVertexData(view, 0, values.Count, dt, EncodingType.FLOAT, false);
-            }
-
-            metadata.SetAccessor(table, attribute, accessor);
+            metadata.SetBufferView(table, attribute, view);
 
             return metadata;
         }
@@ -62,46 +41,52 @@ namespace SharpGLTF.Schema2
 
             foreach (var pop in typeof(T).GetProperties())
             {
-                if (pop.PropertyType == typeof(int))
+                if (pop.PropertyType == typeof(Int16))
+                {
+                    var pops = instances.Select(item => Unsafe.Unbox<Int16>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                }
+
+                if (pop.PropertyType == typeof(UInt16))
+                {
+                    var pops = instances.Select(item => Unsafe.Unbox<UInt16>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                }
+
+                if (pop.PropertyType == typeof(Int32))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Int32>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                }
+
+                if (pop.PropertyType == typeof(UInt32))
+                {
+                    var pops = instances.Select(item => Unsafe.Unbox<UInt32>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                }
+
+                if (pop.PropertyType == typeof(Int64))
+                {
+                    var pops = instances.Select(item => Unsafe.Unbox<Int64>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                }
+
+                if (pop.PropertyType == typeof(UInt64))
+                {
+                    var pops = instances.Select(item => Unsafe.Unbox<Int64>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(Single))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Single>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
                 }
 
-                if (pop.PropertyType == typeof(Vector2))
+                if (pop.PropertyType == typeof(Double))
                 {
-                    var pops = instances.Select(item => Unsafe.Unbox<Vector2>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
-                }
-
-                if (pop.PropertyType == typeof(Vector3))
-                {
-                    var pops = instances.Select(item => Unsafe.Unbox<Vector3>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
-                }
-
-                if (pop.PropertyType == typeof(Vector4))
-                {
-                    var pops = instances.Select(item => Unsafe.Unbox<Vector4>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
-                }
-
-                if (pop.PropertyType == typeof(Quaternion))
-                {
-                    var pops = instances.Select(item => Unsafe.Unbox<Quaternion>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
-                }
-
-                if (pop.PropertyType == typeof(Matrix4x4))
-                {
-                    var pops = instances.Select(item => Unsafe.Unbox<Matrix4x4>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureAccessor(tablekey, pop.Name, pops);
+                    var pops = instances.Select(item => Unsafe.Unbox<Double>(pop.GetValue(item))).ToList();
+                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
                 }
             }
 

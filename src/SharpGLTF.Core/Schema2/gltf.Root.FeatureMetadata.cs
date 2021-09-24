@@ -204,7 +204,7 @@ namespace SharpGLTF.Schema2
             _featuretables.Clear();
         }
 
-        public Accessor GetAccessor(string tablekey, string attributeKey)
+        public BufferView GetBufferView(string tablekey, string attributeKey)
         {
             Guard.NotNullOrEmpty(attributeKey, nameof(attributeKey));
             if (!_featuretables.TryGetValue(tablekey, out var _properties))
@@ -214,7 +214,7 @@ namespace SharpGLTF.Schema2
 
             if (!_properties.TryGetValue(attributeKey, out int idx)) return null;
 
-            return _Owner.LogicalAccessors[idx];
+            return _Owner.LogicalBufferViews[idx];
         }
 
         public void SetInstancesCount(string tablekey, int count)
@@ -225,7 +225,7 @@ namespace SharpGLTF.Schema2
             }
         }
 
-        public void SetAccessor(string tablekey, string attributeKey, Accessor accessor)
+        public void SetBufferView(string tablekey, string attributeKey, BufferView bufferview)
         {
             Guard.NotNullOrEmpty(attributeKey, nameof(attributeKey));
 
@@ -235,11 +235,10 @@ namespace SharpGLTF.Schema2
                 _featuretables.Add(tablekey, _properties);
             }
 
-            if (accessor != null)
+            if (bufferview != null)
             {
-                Guard.MustShareLogicalParent(_Owner, nameof(_Owner), accessor, nameof(accessor));
-                if (_properties.Count > 0) Guard.MustBeEqualTo(Count, accessor.Count, nameof(accessor));
-                _properties[attributeKey] = accessor.LogicalIndex;
+                Guard.MustShareLogicalParent(_Owner, nameof(_Owner), bufferview, nameof(bufferview));
+                _properties[attributeKey] = bufferview.LogicalIndex;
             }
             else
             {

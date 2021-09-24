@@ -10,9 +10,9 @@ using SharpGLTF.Collections;
 
 namespace SharpGLTF.Schema2
 {
-    public partial class FeatureMetadataInstancer : ExtraProperties
+    public partial class FeatureMetadataInstancer<T> : ExtraProperties
     {
-        private Dictionary<string, string> _featuretables;
+        private Dictionary<string, object> _featuretables;
 
         protected override void SerializeProperties(Utf8JsonWriter writer)
         {
@@ -25,12 +25,35 @@ namespace SharpGLTF.Schema2
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("featureTable");
-                writer.WriteStringValue(table.Key);
+
+                if (_Owner is Node)
+                {
+                    writer.WriteStartArray();
+                    writer.WriteNumberValue(_featuretables.Keys.ToList().IndexOf(table.Key));
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    writer.WriteStringValue(table.Key);
+                }
+
                 writer.WritePropertyName("featureIds");
-                writer.WriteStartObject();
-                writer.WritePropertyName("attribute");
-                writer.WriteStringValue(table.Value);
-                writer.WriteEndObject();
+                if (_Owner is Node)
+                {
+                    writer.WriteStartArray();
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("attribute");
+                    writer.WriteNumberValue((UInt32)table.Value);
+                    writer.WriteEndObject();
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("attribute");
+                    writer.WriteStringValue((string)table.Value);
+                    writer.WriteEndObject();
+                }
                 writer.WriteEndObject();
             }
             writer.WriteEndArray();
@@ -53,15 +76,36 @@ namespace SharpGLTF.Schema2
                             if (reader.GetString() == "featureTable")
                             {
                                 reader.Read();
-                                tablename = reader.GetString();
-                                _featuretables.Add(tablename, "");
+                                if (_Owner is Node) reader.Read();
+                                if (reader.TokenType == JsonTokenType.Number)
+                                {
+                                    tablename = ((int)reader.GetUInt32()).ToString();
+                                    _featuretables.Add(tablename, 0);
+                                }
+                                if (reader.TokenType == JsonTokenType.String)
+                                {
+                                    tablename = reader.GetString();
+                                    _featuretables.Add(tablename, "");
+                                }
+                                if (_Owner is Node) reader.Read();
                                 break;
                             }
-
-                            if (reader.GetString() == "attribute")
+                            if (reader.GetString() == "featureIds")
                             {
+                                if (_Owner is Node) reader.Read();
                                 reader.Read();
-                                _featuretables[_featuretables.Last().Key] = reader.GetString();
+                                reader.Read();
+                                if (reader.GetString() == "attribute")
+                                {
+                                    reader.Read();
+                                    if (reader.TokenType == JsonTokenType.Number)
+                                        _featuretables[_featuretables.Last().Key] = reader.GetUInt32();
+                                    if (reader.TokenType == JsonTokenType.String)
+                                        _featuretables[_featuretables.Last().Key] = reader.GetString();
+
+                                }
+                                reader.Read(); 
+                                if (_Owner is Node) reader.Read();
                                 break;
                             }
                             break;
@@ -89,17 +133,14 @@ namespace SharpGLTF.Schema2
         }
     }
 
-    public partial class FeatureMetadataInstancer
+    public partial class FeatureMetadataInstancer<T>
     {
-        private readonly MeshGpuInstancing _Owner;
+        private readonly T _Owner;
 
-        public MeshGpuInstancing LogicalParent => _Owner;
-        public MeshGpuInstancing VisualParent => _Owner;
-
-        internal FeatureMetadataInstancer(MeshGpuInstancing root)
+        internal FeatureMetadataInstancer(T root)
         {
             _Owner = root;
-            _featuretables = new Dictionary<String, String>();
+            _featuretables = new Dictionary<String, object>();
         }
 
         public void ClearAccessors()
@@ -115,30 +156,86 @@ namespace SharpGLTF.Schema2
             }
             _featuretables[table] = feature;
         }
-    }
 
-    public sealed partial class MeshGpuInstancing
-    {
-        public FeatureMetadataInstancer GetFeatureMetadata()
+        public void SetFeatureData(string table, UInt32 feature)
         {
-            return this.GetExtension<FeatureMetadataInstancer>();
+            if (!_featuretables.ContainsKey(table))
+            {
+                _featuretables.Add(table, feature);
+            }
+
+            _featuretables[table] = feature;
         }
 
-        public FeatureMetadataInstancer UseFeatureMetadata()
+
+    }
+
+    public static class FeatureMetadataInstancerExt
+    {
+        public static FeatureMetadataInstancer<MeshGpuInstancing> GetFeatureMetadata(this MeshGpuInstancing obj)
         {
-            var ext = GetFeatureMetadata();
+            return obj.GetExtension<FeatureMetadataInstancer<MeshGpuInstancing>>();
+        }
+
+        public static FeatureMetadataInstancer<MeshPrimitive> GetFeatureMetadata(this MeshPrimitive obj)
+        {
+            return obj.GetExtension<FeatureMetadataInstancer<MeshPrimitive>>();
+        }
+
+        public static FeatureMetadataInstancer<Node> GetFeatureMetadata(this Node obj)
+        {
+            return obj.GetExtension<FeatureMetadataInstancer<Node>>();
+        }
+
+        public static FeatureMetadataInstancer<MeshGpuInstancing> UseFeatureMetadata(this MeshGpuInstancing obj)
+        {
+            var ext = obj.GetFeatureMetadata();
             if (ext == null)
             {
-                ext = new FeatureMetadataInstancer(this);
-                this.SetExtension(ext);
+                ext = new FeatureMetadataInstancer<MeshGpuInstancing>(obj);
+                obj.SetExtension(ext);
             }
 
             return ext;
         }
 
-        public void RemoveFeatureMetadata()
+        public static FeatureMetadataInstancer<Node> UseFeatureMetadata(this Node obj)
         {
-            this.RemoveExtensions<FeatureMetadataInstancer>();
+            var ext = obj.GetFeatureMetadata();
+            if (ext == null)
+            {
+                ext = new FeatureMetadataInstancer<Node>(obj);
+                obj.SetExtension(ext);
+            }
+
+            return ext;
+        }
+
+        public static FeatureMetadataInstancer<MeshPrimitive> UseFeatureMetadata(this MeshPrimitive obj)
+        {
+            var ext = obj.GetFeatureMetadata();
+            if (ext == null)
+            {
+                ext = new FeatureMetadataInstancer<MeshPrimitive>(obj);
+                obj.SetExtension(ext);
+            }
+
+            return ext;
+        }
+
+        public static void RemoveFeatureMetadata(this MeshGpuInstancing obj)
+        {
+            obj.RemoveExtensions<FeatureMetadataInstancer<MeshGpuInstancing>>();
+        }
+
+        public static void RemoveFeatureMetadata(this Node obj)
+        {
+            obj.RemoveExtensions<FeatureMetadataInstancer<Node>>();
+        }
+
+        public static void RemoveFeatureMetadata(this MeshPrimitive obj)
+        {
+            obj.RemoveExtensions<FeatureMetadataInstancer<MeshPrimitive>>();
         }
     }
 }
