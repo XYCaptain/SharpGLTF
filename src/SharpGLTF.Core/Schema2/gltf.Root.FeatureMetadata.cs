@@ -26,7 +26,7 @@ namespace SharpGLTF.Schema2
             writer.WritePropertyName("schema");
             writer.WriteRawValue(_schemastring);
 
-            writer.WritePropertyName("featureTables");
+            writer.WritePropertyName("propertyTables");
             writer.WriteStartObject();
 
             foreach (var table in _featuretables)

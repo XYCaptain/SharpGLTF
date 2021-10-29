@@ -19,117 +19,107 @@ namespace SharpGLTF.Schema2
             Guard.NotNull(writer, nameof(writer));
             base.SerializeProperties(writer);
 
-            writer.WritePropertyName("featureIdAttributes");
+            writer.WritePropertyName("propertyTables");
             writer.WriteStartArray();
+
             foreach (var table in _featuretables)
             {
-                writer.WriteStartObject();
-                writer.WritePropertyName("featureTable");
 
-                if (_Owner is Node)
-                {
-                    writer.WriteStartArray();
-                    writer.WriteNumberValue(_featuretables.Keys.ToList().IndexOf(table.Key));
-                    writer.WriteEndArray();
-                }
-                else
-                {
-                    writer.WriteStringValue(table.Key);
-                }
-
-                writer.WritePropertyName("featureIds");
-                if (_Owner is Node)
-                {
-                    writer.WriteStartArray();
-                    writer.WriteStartObject();
-                    writer.WritePropertyName("attribute");
-                    writer.WriteNumberValue((UInt32)table.Value);
-                    writer.WriteEndObject();
-                    writer.WriteEndArray();
-                }
-                else
-                {
-                    writer.WriteStartObject();
-                    writer.WritePropertyName("attribute");
-                    writer.WriteStringValue((string)table.Value);
-                    writer.WriteEndObject();
-                }
-                writer.WriteEndObject();
+                writer.WriteNumberValue(_featuretables.Keys.ToList().IndexOf(table.Key));
             }
+
+            writer.WriteEndArray();
+
+            writer.WritePropertyName("featureIds");
+            writer.WriteStartArray();
+            writer.WriteStartObject();
+            writer.WritePropertyName("attribute");
+            writer.WriteNumberValue(0);
+            writer.WriteEndObject();
             writer.WriteEndArray();
         }
 
         protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
         {
-            if (jsonPropertyName == "featureIdAttributes")
+            Dictionary<string, int> propertyTables = new Dictionary<string, int>();
+            Dictionary<string, int> featureIds = new Dictionary<string, int>();
+
+            switch (jsonPropertyName)
             {
-                int level = 1;
-                string tablename = "";
-                int count = 0;
-
-                while (level > 0 && reader.Read())
-                {
-                    switch (reader.TokenType)
-                    {
-                        case JsonTokenType.PropertyName:
-
-                            if (reader.GetString() == "featureTable")
-                            {
-                                reader.Read();
-                                if (_Owner is Node) reader.Read();
-                                if (reader.TokenType == JsonTokenType.Number)
-                                {
-                                    tablename = ((int)reader.GetUInt32()).ToString();
-                                    _featuretables.Add(tablename, 0);
-                                }
-                                if (reader.TokenType == JsonTokenType.String)
-                                {
-                                    tablename = reader.GetString();
-                                    _featuretables.Add(tablename, "");
-                                }
-                                if (_Owner is Node) reader.Read();
-                                break;
-                            }
-                            if (reader.GetString() == "featureIds")
-                            {
-                                if (_Owner is Node) reader.Read();
-                                reader.Read();
-                                reader.Read();
-                                if (reader.GetString() == "attribute")
-                                {
-                                    reader.Read();
-                                    if (reader.TokenType == JsonTokenType.Number)
-                                        _featuretables[_featuretables.Last().Key] = reader.GetUInt32();
-                                    if (reader.TokenType == JsonTokenType.String)
-                                        _featuretables[_featuretables.Last().Key] = reader.GetString();
-
-                                }
-                                reader.Read(); 
-                                if (_Owner is Node) reader.Read();
-                                break;
-                            }
-                            break;
-                        case JsonTokenType.StartArray:
-                            level++;
-                            break;
-                        case JsonTokenType.EndArray:
-                            level--;
-                            if (level == 1)
-                                return;
-                            break;
-                        case JsonTokenType.StartObject:
-                            level++;
-                            break;
-                        case JsonTokenType.EndObject:
-                            level--;
-                            if (level == 1)
-                                return;
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                case "propertyTables": DeserializePropertyDictionary<Int32>(ref reader, propertyTables); break;
+                case "featureIds": DeserializePropertyDictionary<Int32>(ref reader, featureIds); break;
+                default: base.DeserializeProperty(jsonPropertyName, ref reader); break;
             }
+
+            //if (jsonPropertyName == "featureIdAttributes")
+            //{
+            //    int level = 1;
+            //    string tablename = "";
+            //    int count = 0;
+
+            //    while (level > 0 && reader.Read())
+            //    {
+            //        switch (reader.TokenType)
+            //        {
+            //            case JsonTokenType.PropertyName:
+
+            //                if (reader.GetString() == "propertyTables")
+            //                {
+            //                    reader.Read();
+            //                    if (_Owner is Node) reader.Read();
+            //                    if (reader.TokenType == JsonTokenType.Number)
+            //                    {
+            //                        tablename = ((int)reader.GetUInt32()).ToString();
+            //                        _featuretables.Add(tablename, 0);
+            //                    }
+            //                    if (reader.TokenType == JsonTokenType.String)
+            //                    {
+            //                        tablename = reader.GetString();
+            //                        _featuretables.Add(tablename, "");
+            //                    }
+            //                    if (_Owner is Node) reader.Read();
+            //                    break;
+            //                }
+            //                if (reader.GetString() == "featureIds")
+            //                {
+            //                    if (_Owner is Node) reader.Read();
+            //                    reader.Read();
+            //                    reader.Read();
+            //                    if (reader.GetString() == "attribute")
+            //                    {
+            //                        reader.Read();
+            //                        if (reader.TokenType == JsonTokenType.Number)
+            //                            _featuretables[_featuretables.Last().Key] = reader.GetUInt32();
+            //                        if (reader.TokenType == JsonTokenType.String)
+            //                            _featuretables[_featuretables.Last().Key] = reader.GetString();
+
+            //                    }
+            //                    reader.Read();
+            //                    if (_Owner is Node) reader.Read();
+            //                    break;
+            //                }
+            //                break;
+            //            case JsonTokenType.StartArray:
+            //                level++;
+            //                break;
+            //            case JsonTokenType.EndArray:
+            //                level--;
+            //                if (level == 1)
+            //                    return;
+            //                break;
+            //            case JsonTokenType.StartObject:
+            //                level++;
+            //                break;
+            //            case JsonTokenType.EndObject:
+            //                level--;
+            //                if (level == 1)
+            //                    return;
+            //                break;
+            //            default:
+            //                break;
+            //        }
+            //    }
+            //}
         }
     }
 

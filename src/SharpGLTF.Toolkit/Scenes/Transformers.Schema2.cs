@@ -132,8 +132,16 @@ namespace SharpGLTF.Scenes
                         var dstNode = dst.CreateNode();
                         dstNode.LocalTransform = srcChild.ChildTransform;
                         srcOperator.ApplyTo(dstNode, context);
+                        try
+                        {
+                            System.Diagnostics.Debug.Assert(dstNode.WorldMatrix == srcChild.GetPoseWorldMatrix(), "Transform mismatch NomalMode!");
 
-                        System.Diagnostics.Debug.Assert(dstNode.WorldMatrix == srcChild.GetPoseWorldMatrix(), "Transform mismatch!");
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
                     }
                 }
             }
@@ -164,7 +172,16 @@ namespace SharpGLTF.Scenes
                         var srcXform = _Children[i].GetPoseWorldMatrix();
                         var dstXform = dstInstances.GetWorldMatrix(i);
 
-                        System.Diagnostics.Debug.Assert( srcXform == dstXform, "Transform mismatch!");
+                        try
+                        {
+                            System.Diagnostics.Debug.Assert(srcXform == dstXform, "Transform mismatch Instance Mode!");
+
+                        }
+                        catch (Exception e )
+                        {
+
+                            throw;
+                        }
                     }
                     #endif
                 }
