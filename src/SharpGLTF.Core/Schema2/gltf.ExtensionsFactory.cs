@@ -22,12 +22,11 @@ namespace SharpGLTF.Schema2
         static ExtensionsFactory()
         {
             RegisterExtension<ModelRoot, _ModelPunctualLights>("KHR_lights_punctual");
-            RegisterExtension<ModelRoot, FeatureMetadata>("EXT_mesh_features");
+            RegisterExtension<ModelRoot, MeshFeatures>("EXT_mesh_features");
 
             RegisterExtension<Node, _NodePunctualLight>("KHR_lights_punctual");
             RegisterExtension<Node, MeshGpuInstancing>("EXT_mesh_gpu_instancing");
 
-            RegisterExtension<MeshGpuInstancing, FeatureMetadataInstancer<MeshGpuInstancing>>("EXT_mesh_features");
             RegisterExtension<MeshPrimitive, FeatureMetadataInstancer<MeshPrimitive>>("EXT_mesh_features");
             RegisterExtension<Node, FeatureMetadataInstancer<Node>>("EXT_mesh_features");
 

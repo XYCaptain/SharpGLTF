@@ -10,11 +10,14 @@ using SharpGLTF.Collections;
 
 namespace SharpGLTF.Schema2
 {
-    public partial class FeatureMetadata : ExtraProperties
+    public partial class MeshFeatures : ExtraProperties
     {
         private string? _schemastring;
+
         private Dictionary<String, Dictionary<String, Int32>> _featuretables;
         private Dictionary<String, Int32> _featuretablescounts;
+        private Dictionary<String, string> _featuretableclasses;
+
         protected override void SerializeProperties(Utf8JsonWriter writer)
         {
             Guard.NotNull(writer, nameof(writer));
@@ -27,16 +30,15 @@ namespace SharpGLTF.Schema2
             writer.WriteRawValue(_schemastring);
 
             writer.WritePropertyName("propertyTables");
-            writer.WriteStartObject();
+            writer.WriteStartArray();
 
             foreach (var table in _featuretables)
             {
-                writer.WritePropertyName(table.Key);
-
                 writer.WriteStartObject();
-
-                writer.WritePropertyName("class");
+                writer.WritePropertyName("name");
                 writer.WriteStringValue(table.Key);
+                writer.WritePropertyName("class");
+                writer.WriteStringValue(_featuretableclasses[table.Key]);
                 writer.WritePropertyName("count");
                 writer.WriteNumberValue(_featuretablescounts[table.Key]);
 
@@ -56,7 +58,7 @@ namespace SharpGLTF.Schema2
                 writer.WriteEndObject();
             }
 
-            writer.WriteEndObject();
+            writer.WriteEndArray();
         }
 
         protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
@@ -86,7 +88,7 @@ namespace SharpGLTF.Schema2
                             level++;
                             continue;
                         case JsonTokenType.EndObject:
-                            str.AppendLine("\r\n}");
+                            str.AppendLine("}");
                             level--;
                             continue;
                         default:
@@ -96,7 +98,7 @@ namespace SharpGLTF.Schema2
                 _schemastring = str.ToString();
             }
 
-            if (reader.GetString() == "featureTables")
+            if (reader.GetString() == "propertyTables")
             {
                 int level = 1;
                 string tablename = "";
@@ -107,12 +109,18 @@ namespace SharpGLTF.Schema2
                     switch (reader.TokenType)
                     {
                         case JsonTokenType.PropertyName:
-
-                            if (reader.GetString() == "class")
+                            if (reader.GetString() == "name")
                             {
                                 reader.Read();
                                 tablename = reader.GetString();
                                 _featuretables.Add(tablename, new Dictionary<string, int>());
+                                break;
+                            }
+
+                            if (reader.GetString() == "class")
+                            {
+                                reader.Read();
+                                _featuretableclasses.Add(tablename, reader.GetString());
                                 break;
                             }
 
@@ -154,6 +162,14 @@ namespace SharpGLTF.Schema2
                             }
 
                             break;
+                        case JsonTokenType.StartArray:
+                            level++;
+                            break;
+                        case JsonTokenType.EndArray:
+                            level--;
+                            if (level == 1)
+                                return;
+                            break;
                         case JsonTokenType.StartObject:
                             level++;
                             break;
@@ -170,17 +186,18 @@ namespace SharpGLTF.Schema2
         }
     }
 
-    public partial class FeatureMetadata
+    public partial class MeshFeatures
     {
         private readonly ModelRoot _Owner;
 
         public ModelRoot LogicalParent => _Owner;
 
-        internal FeatureMetadata(ModelRoot root)
+        internal MeshFeatures(ModelRoot root)
         {
             _Owner = root;
             _featuretables = new Dictionary<String, Dictionary<String, Int32>>();
             _featuretablescounts = new Dictionary<string, int>();
+            _featuretableclasses = new Dictionary<string, string>();
         }
 
         public int Count => _GetCount();
@@ -225,6 +242,14 @@ namespace SharpGLTF.Schema2
             }
         }
 
+        public void SetInstancesClass(string tablekey, string classtype)
+        {
+            if (!_featuretableclasses.TryGetValue(tablekey, out var _))
+            {
+                _featuretableclasses.Add(tablekey, classtype);
+            }
+        }
+
         public void SetBufferView(string tablekey, string attributeKey, BufferView bufferview)
         {
             Guard.NotNullOrEmpty(attributeKey, nameof(attributeKey));
@@ -255,17 +280,17 @@ namespace SharpGLTF.Schema2
 
     public sealed partial class ModelRoot
     {
-        public FeatureMetadata GetFeatureMetadata()
+        public MeshFeatures GetFeatureMetadata()
         {
-            return this.GetExtension<FeatureMetadata>();
+            return this.GetExtension<MeshFeatures>();
         }
 
-        public FeatureMetadata UseFeatureMetadata()
+        public MeshFeatures UseFeatureMetadata()
         {
             var ext = GetFeatureMetadata();
             if (ext == null)
             {
-                ext = new FeatureMetadata(this);
+                ext = new MeshFeatures(this);
                 this.SetExtension(ext);
             }
 
@@ -274,7 +299,7 @@ namespace SharpGLTF.Schema2
 
         public void RemoveFeatureMetadata()
         {
-            this.RemoveExtensions<FeatureMetadata>();
+            this.RemoveExtensions<MeshFeatures>();
         }
     }
 }

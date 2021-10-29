@@ -12,13 +12,13 @@ namespace SharpGLTF.Schema2
 {
     public static partial class Toolkit
     {
-        public static FeatureMetadata WithShcema(this FeatureMetadata metadata, string shcemaSTRING)
+        public static MeshFeatures WithShcema(this MeshFeatures metadata, string shcemaSTRING)
         {
             metadata.SetShcema(shcemaSTRING);
             return metadata;
         }
 
-        public static unsafe FeatureMetadata WithFeatureBufferView<T>(this FeatureMetadata metadata, string table, string attribute, IReadOnlyList<T> values)
+        public static unsafe MeshFeatures WithFeatureBufferView<T>(this MeshFeatures metadata, string table, string attribute, IReadOnlyList<T> values)
                where T : unmanaged
         {
             Guard.NotNull(metadata, nameof(metadata));
@@ -31,62 +31,65 @@ namespace SharpGLTF.Schema2
             return metadata;
         }
 
-        public static FeatureMetadata WithFeatureAccessors<T>(this FeatureMetadata metadata, IReadOnlyList<T> instances)
+        public static MeshFeatures WithFeatureAccessors<T>(this MeshFeatures metadata, IReadOnlyList<T> instances)
         {
             Guard.NotNull(metadata, nameof(metadata));
             Guard.NotNull(instances, nameof(instances));
-            var tablekey = instances.GetType().GenericTypeArguments.First().Name;
 
-            metadata.SetInstancesCount(tablekey, instances.Count);
+            var tablekey = instances.GetType().GenericTypeArguments.First().Name;
+            var tablename = tablekey + "s";
+
+            metadata.SetInstancesCount(tablename, instances.Count);
+            metadata.SetInstancesClass(tablename, tablekey);
 
             foreach (var pop in typeof(T).GetProperties())
             {
                 if (pop.PropertyType == typeof(Int16))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Int16>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(UInt16))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<UInt16>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(Int32))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Int32>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(UInt32))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<UInt32>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(Int64))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Int64>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(UInt64))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Int64>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(Single))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Single>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
 
                 if (pop.PropertyType == typeof(Double))
                 {
                     var pops = instances.Select(item => Unsafe.Unbox<Double>(pop.GetValue(item))).ToList();
-                    metadata.WithFeatureBufferView(tablekey, pop.Name, pops);
+                    metadata.WithFeatureBufferView(tablename, pop.Name, pops);
                 }
             }
 

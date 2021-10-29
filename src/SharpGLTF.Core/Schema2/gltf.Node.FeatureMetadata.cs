@@ -7,12 +7,46 @@ using System.Text.Json;
 using System.Xml.Linq;
 using Newtonsoft.Json;
 using SharpGLTF.Collections;
+using SharpGLTF.IO;
 
 namespace SharpGLTF.Schema2
 {
+    public class featureid : ExtraProperties
+    {
+        public int? attribute;
+        public int? offset;
+        public int? repeat;
+
+        protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
+        {
+            switch (jsonPropertyName)
+            {
+                case "attribute": attribute = DeserializePropertyValue<Int32>(ref reader); break;
+                case "offset": offset = DeserializePropertyValue<Int32>(ref reader); break;
+                case "repeat": repeat = DeserializePropertyValue<Int32>(ref reader); break;
+                default: base.DeserializeProperty(jsonPropertyName, ref reader); break;
+            }
+        }
+
+        protected override void SerializeProperties(Utf8JsonWriter writer)
+        {
+            Guard.NotNull(writer, nameof(writer));
+            base.SerializeProperties(writer);
+
+            if (attribute.HasValue)
+                SerializeProperty(writer, "attribute", attribute.Value);
+
+            if (offset.HasValue)
+                SerializeProperty(writer, "offset", offset.Value);
+
+            if (repeat.HasValue)
+                SerializeProperty(writer, "repeat", repeat.Value);
+        }
+    }
+
     public partial class FeatureMetadataInstancer<T> : ExtraProperties
     {
-        private Dictionary<string, object> _featuretables;
+        private List<(int tableindex, featureid id)> _featuretables;
 
         protected override void SerializeProperties(Utf8JsonWriter writer)
         {
@@ -24,102 +58,46 @@ namespace SharpGLTF.Schema2
 
             foreach (var table in _featuretables)
             {
-
-                writer.WriteNumberValue(_featuretables.Keys.ToList().IndexOf(table.Key));
+                writer.WriteNumberValue(table.tableindex);
             }
 
             writer.WriteEndArray();
 
             writer.WritePropertyName("featureIds");
             writer.WriteStartArray();
-            writer.WriteStartObject();
-            writer.WritePropertyName("attribute");
-            writer.WriteNumberValue(0);
-            writer.WriteEndObject();
+            foreach (var table in _featuretables)
+            {
+                table.id.Serialize(writer);
+            }
+
             writer.WriteEndArray();
         }
 
         protected override void DeserializeProperty(string jsonPropertyName, ref Utf8JsonReader reader)
         {
-            Dictionary<string, int> propertyTables = new Dictionary<string, int>();
-            Dictionary<string, int> featureIds = new Dictionary<string, int>();
 
             switch (jsonPropertyName)
             {
-                case "propertyTables": DeserializePropertyDictionary<Int32>(ref reader, propertyTables); break;
-                case "featureIds": DeserializePropertyDictionary<Int32>(ref reader, featureIds); break;
+                case "propertyTables":
+                    List<int> propertyTables = new();
+                    DeserializePropertyList<Int32>(ref reader, propertyTables);
+                    for (int i = 0; i < propertyTables.Count; i++)
+                    {
+                        _featuretables.Add(new(propertyTables[i], null));
+                    }
+                    break;
+                case "featureIds":
+                    List<featureid> featureIds = new();
+                    DeserializePropertyList<featureid>(ref reader, featureIds);
+                    for (int i = 0; i < featureIds.Count; i++)
+                    {
+                        _featuretables[i] = new(_featuretables[i].tableindex, featureIds[i]);
+                    }
+                    break;
                 default: base.DeserializeProperty(jsonPropertyName, ref reader); break;
             }
 
-            //if (jsonPropertyName == "featureIdAttributes")
-            //{
-            //    int level = 1;
-            //    string tablename = "";
-            //    int count = 0;
 
-            //    while (level > 0 && reader.Read())
-            //    {
-            //        switch (reader.TokenType)
-            //        {
-            //            case JsonTokenType.PropertyName:
-
-            //                if (reader.GetString() == "propertyTables")
-            //                {
-            //                    reader.Read();
-            //                    if (_Owner is Node) reader.Read();
-            //                    if (reader.TokenType == JsonTokenType.Number)
-            //                    {
-            //                        tablename = ((int)reader.GetUInt32()).ToString();
-            //                        _featuretables.Add(tablename, 0);
-            //                    }
-            //                    if (reader.TokenType == JsonTokenType.String)
-            //                    {
-            //                        tablename = reader.GetString();
-            //                        _featuretables.Add(tablename, "");
-            //                    }
-            //                    if (_Owner is Node) reader.Read();
-            //                    break;
-            //                }
-            //                if (reader.GetString() == "featureIds")
-            //                {
-            //                    if (_Owner is Node) reader.Read();
-            //                    reader.Read();
-            //                    reader.Read();
-            //                    if (reader.GetString() == "attribute")
-            //                    {
-            //                        reader.Read();
-            //                        if (reader.TokenType == JsonTokenType.Number)
-            //                            _featuretables[_featuretables.Last().Key] = reader.GetUInt32();
-            //                        if (reader.TokenType == JsonTokenType.String)
-            //                            _featuretables[_featuretables.Last().Key] = reader.GetString();
-
-            //                    }
-            //                    reader.Read();
-            //                    if (_Owner is Node) reader.Read();
-            //                    break;
-            //                }
-            //                break;
-            //            case JsonTokenType.StartArray:
-            //                level++;
-            //                break;
-            //            case JsonTokenType.EndArray:
-            //                level--;
-            //                if (level == 1)
-            //                    return;
-            //                break;
-            //            case JsonTokenType.StartObject:
-            //                level++;
-            //                break;
-            //            case JsonTokenType.EndObject:
-            //                level--;
-            //                if (level == 1)
-            //                    return;
-            //                break;
-            //            default:
-            //                break;
-            //        }
-            //    }
-            //}
         }
     }
 
@@ -130,7 +108,7 @@ namespace SharpGLTF.Schema2
         internal FeatureMetadataInstancer(T root)
         {
             _Owner = root;
-            _featuretables = new Dictionary<String, object>();
+            _featuretables = new();
         }
 
         public void ClearAccessors()
@@ -138,26 +116,11 @@ namespace SharpGLTF.Schema2
             _featuretables.Clear();
         }
 
-        public void SetFeatureData(string table, string feature)
+        public FeatureMetadataInstancer<T> SetFeatureData(int tableindex, featureid featureid)
         {
-            if (!_featuretables.ContainsKey(table))
-            {
-                _featuretables.Add(table, feature);
-            }
-            _featuretables[table] = feature;
+            _featuretables.Add(new(tableindex, featureid));
+            return this;
         }
-
-        public void SetFeatureData(string table, UInt32 feature)
-        {
-            if (!_featuretables.ContainsKey(table))
-            {
-                _featuretables.Add(table, feature);
-            }
-
-            _featuretables[table] = feature;
-        }
-
-
     }
 
     public static class FeatureMetadataInstancerExt
@@ -177,17 +140,6 @@ namespace SharpGLTF.Schema2
             return obj.GetExtension<FeatureMetadataInstancer<Node>>();
         }
 
-        public static FeatureMetadataInstancer<MeshGpuInstancing> UseFeatureMetadata(this MeshGpuInstancing obj)
-        {
-            var ext = obj.GetFeatureMetadata();
-            if (ext == null)
-            {
-                ext = new FeatureMetadataInstancer<MeshGpuInstancing>(obj);
-                obj.SetExtension(ext);
-            }
-
-            return ext;
-        }
 
         public static FeatureMetadataInstancer<Node> UseFeatureMetadata(this Node obj)
         {
@@ -201,17 +153,6 @@ namespace SharpGLTF.Schema2
             return ext;
         }
 
-        public static FeatureMetadataInstancer<MeshPrimitive> UseFeatureMetadata(this MeshPrimitive obj)
-        {
-            var ext = obj.GetFeatureMetadata();
-            if (ext == null)
-            {
-                ext = new FeatureMetadataInstancer<MeshPrimitive>(obj);
-                obj.SetExtension(ext);
-            }
-
-            return ext;
-        }
 
         public static void RemoveFeatureMetadata(this MeshGpuInstancing obj)
         {

@@ -55,11 +55,12 @@ namespace SharpGLTF.Extensions
 
             model.LogicalNodes.Where(x => x.Name == "instance").FirstOrDefault()
                 .UseGpuInstancing().WithInstanceAccessors(ass)
-                .WithInstanceCustomAccessor("_FEATURE_ID_0", fids)
-                .UseFeatureMetadata().SetFeatureData("building", "_FEATURE_ID_0");
+                .WithInstanceCustomAccessor("FEATURE_ID_0", fids);
+            model.LogicalNodes.Where(x => x.Name == "instance").FirstOrDefault()
+                .UseFeatureMetadata().SetFeatureData(0, new featureid() { attribute = 0 });
 
             model.LogicalNodes.Where(x => x.Name == "root").FirstOrDefault()
-                 .UseFeatureMetadata().SetFeatureData("building", 0);
+                 .UseFeatureMetadata().SetFeatureData(0, new featureid() { attribute = 0 }).SetFeatureData(0, new featureid() { offset = 0, repeat = 2 });
 
 
             var f = model.UseFeatureMetadata();
