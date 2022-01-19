@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
+
+  <!-- https://github.com/dotnet/sourcelink/#using-sourcelink -->
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+
+    <Deterministic>true</Deterministic>
 
     <GitRepositoryRemoteName>github</GitRepositoryRemoteName>
 
@@ -9,7 +13,9 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
     <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>    
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 
   </PropertyGroup>
 
