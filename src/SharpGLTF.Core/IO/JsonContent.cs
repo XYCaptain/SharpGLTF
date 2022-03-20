@@ -18,9 +18,11 @@ namespace SharpGLTF.IO
     /// </remarks>
     [System.ComponentModel.ImmutableObject(true)]
     [System.Diagnostics.DebuggerDisplay("{ToDebuggerDisplay(),nq}")]
-    public readonly struct JsonContent
+    public readonly struct JsonContent : ICloneable, IEquatable<JsonContent>
     {
         #region debug
+
+        internal const string _JsonTrimmingError1 = "JSON serialization and deserialization might require types that cannot be statically analyzed. Use the overload that takes a JsonTypeInfo or JsonSerializerContext, or make sure all of the required types are preserved.";
 
         private string ToDebuggerDisplay()
         {
@@ -28,7 +30,9 @@ namespace SharpGLTF.IO
 
             var options = new JSONOPTIONS();
             options.WriteIndented = true;
+            #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             return ToJson(options);
+            #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
         }
 
         #endregion
@@ -56,9 +60,13 @@ namespace SharpGLTF.IO
         private JsonContent(Object value)
         {
             _Content = value == null ? null : _JsonStaticUtils.Serialize(value);
+
+            // don't store empty collections.
             if (_Content is IJsonCollection collection && collection.Count == 0)
                 _Content = null;
         }
+
+        Object ICloneable.Clone() { return new JsonContent(_Content); }
 
         public JsonContent DeepClone() { return new JsonContent(_Content); }
 
@@ -71,14 +79,17 @@ namespace SharpGLTF.IO
 
         public override int GetHashCode()
         {
-            // until I figure a correct way of handling this...
-            throw new NotSupportedException("Do not use");
+            return _Content == null ? 0 : _Content.GetHashCode();
         }
 
         public override bool Equals(object obj)
         {
-            // until I figure a correct way of handling this...
-            throw new NotSupportedException($"Use {nameof(JsonContent.AreEqualByContent)} instead.");
+            return obj is JsonContent other && Equals(other);
+        }
+
+        public bool Equals(JsonContent other)
+        {
+            return Object.Equals(this._Content, other._Content);
         }
 
         /// <summary>
@@ -125,6 +136,9 @@ namespace SharpGLTF.IO
         /// <param name="value">The value to convert.</param>
         /// <param name="options">Options to control the conversion behavior.</param>
         /// <returns>A <see cref="JsonContent"/> object.</returns>
+        #if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(_JsonTrimmingError1)]
+        #endif
         public static JsonContent Serialize(Object value, JSONOPTIONS options = null)
         {
             if (value == null) return default;
@@ -134,7 +148,7 @@ namespace SharpGLTF.IO
                 options = new JSONOPTIONS
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    IgnoreNullValues = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                     WriteIndented = true
                 };
             }
@@ -163,16 +177,25 @@ namespace SharpGLTF.IO
             return root == null ? default : new JsonContent(_JsonStaticUtils.Deserialize(root.RootElement));
         }
 
+        #if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(_JsonTrimmingError1)]
+        #endif
         public string ToJson(JSONOPTIONS options = null)
         {
             return _JsonStaticUtils.ToJson(_Content, options);
         }
 
+        #if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(_JsonTrimmingError1)]
+        #endif
         public Object Deserialize(Type type, JSONOPTIONS options = null)
         {
             return _JsonStaticUtils.Deserialize(_Content, type, options);
         }
 
+        #if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(_JsonTrimmingError1)]
+        #endif
         public T Deserialize<T>(JSONOPTIONS options = null)
         {
             return (T)_JsonStaticUtils.Deserialize(_Content, typeof(T), options);
@@ -194,6 +217,8 @@ namespace SharpGLTF.IO
 
         public JsonContent GetNode(params IConvertible[] path)
         {
+            Guard.NotNull(path, nameof(path));
+
             var value = _JsonStaticUtils.GetNode(this._Content, path);
             return new JsonContent(value);
         }
@@ -201,6 +226,8 @@ namespace SharpGLTF.IO
         public T GetValue<T>(params IConvertible[] path)
             where T : IConvertible
         {
+            Guard.NotNull(path, nameof(path));
+
             return _JsonStaticUtils.GetValue<T>(this._Content, path);
         }
 

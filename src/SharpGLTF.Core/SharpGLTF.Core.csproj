@@ -16,7 +16,13 @@
   <Import Project="..\Version.props" />
   <Import Project="..\Analyzers.props" />
   <Import Project="..\Testing.props" />
+  <Import Project="..\SourceLink.props" />
 
+  <PropertyGroup>
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="..\Shared\Guard.cs" Link="Diagnostics\Guard.cs" />
     <Compile Include="..\Shared\_Extensions.cs" Link="_Extensions.cs" />
@@ -33,15 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.354" />
-  </ItemGroup>
+    <None Include="..\..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>  
 
 </Project>

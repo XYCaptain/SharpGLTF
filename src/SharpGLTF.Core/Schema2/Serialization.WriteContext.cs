@@ -71,7 +71,7 @@ namespace SharpGLTF.Schema2
             }
 
             var context = Create(_saveFile);
-            context.ImageWriting = ResourceWriteMode.SatelliteFile;
+            context.ImageWriting = ResourceWriteMode.Default;
             context.JsonIndented = true;
             context.CurrentDirectory = dinfo;
             return context;
@@ -95,16 +95,31 @@ namespace SharpGLTF.Schema2
             Guard.IsTrue(stream.CanWrite, nameof(stream));
 
             var context = Create((fn, d) => stream.Write(d.Array, d.Offset, d.Count));
-            context.ImageWriting = ResourceWriteMode.Embedded;
+            context.ImageWriting = ResourceWriteMode.Default;
             context.MergeBuffers = true;
             context.JsonIndented = false;
 
             return context.WithBinarySettings();
         }
 
+        public WriteContext WithTextSettings()
+        {
+            if (ImageWriting == ResourceWriteMode.Default) ImageWriting = ResourceWriteMode.SatelliteFile;
+            if (ImageWriting == ResourceWriteMode.BufferView) ImageWriting = ResourceWriteMode.SatelliteFile;
+
+            MergeBuffers = true;
+            JsonIndented = false;
+
+            return this;
+        }
+
         public WriteContext WithBinarySettings()
         {
-            ImageWriting = ResourceWriteMode.BufferView;
+            // Binary settings should allow BufferView and SatelliteFile ImageWriting modes:
+
+            if (ImageWriting == ResourceWriteMode.Default) ImageWriting = ResourceWriteMode.BufferView;
+            if (ImageWriting == ResourceWriteMode.Embedded) ImageWriting = ResourceWriteMode.BufferView;
+
             MergeBuffers = true;
             JsonIndented = false;
 
@@ -155,7 +170,7 @@ namespace SharpGLTF.Schema2
         /// <summary>
         /// Gets a value indicating whether creating a defensive copy before serialization is not allowed.
         /// </summary>
-        internal bool _NoCloneWatchdog { get; private set; } = false;
+        internal bool _NoCloneWatchdog { get; private set; }
 
         #endregion
 
@@ -175,10 +190,16 @@ namespace SharpGLTF.Schema2
         }
 
         /// <summary>
-        /// Writes <paramref name="model"/> to this context.
+        /// Writes <paramref name="model"/> to this context using the glTF json container.
         /// </summary>
         /// <param name="baseName">The base name to use for asset files, without extension.</param>
         /// <param name="model">The <see cref="MODEL"/> to write.</param>
+        /// <remarks>
+        /// If the model has associated resources like binary assets and textures,<br/>
+        /// these additional resources will be also written as associated files using the pattern:<br/>
+        /// <br/>
+        /// "<paramref name="baseName"/>.{Number}.bin|png|jpg|dds"
+        /// </remarks>
         public void WriteTextSchema2(string baseName, MODEL model)
         {
             Guard.NotNullOrEmpty(baseName, nameof(baseName));
@@ -195,7 +216,7 @@ namespace SharpGLTF.Schema2
 
             using (var m = new MemoryStream())
             {
-                model._WriteJSON(m, this.JsonOptions);
+                model._WriteJSON(m, this.JsonOptions, this.JsonPostprocessor);
 
                 WriteAllBytesToEnd($"{baseName}.gltf", m.ToArraySegment());
             }
@@ -204,7 +225,7 @@ namespace SharpGLTF.Schema2
         }
 
         /// <summary>
-        /// Writes <paramref name="model"/> to this context.
+        /// Writes <paramref name="model"/> to this context using the GLB binary container.
         /// </summary>
         /// <param name="baseName">The base name to use for asset files, without extension.</param>
         /// <param name="model">The <see cref="MODEL"/> to write.</param>

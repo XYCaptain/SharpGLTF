@@ -60,7 +60,7 @@ namespace SharpGLTF.Schema2
 
         #region data
 
-        private System.Text.Json.JsonWriterOptions _JsonOptions = default;
+        private System.Text.Json.JsonWriterOptions _JsonOptions;
 
         #endregion
 
@@ -116,6 +116,11 @@ namespace SharpGLTF.Schema2
         /// </summary>
         public VALIDATIONMODE Validation { get; set; } = VALIDATIONMODE.Strict;
 
+        /// <summary>
+        /// Gets or sets the callback used to postprocess the json text before parsing it.
+        /// </summary>
+        public JsonFilterCallback JsonPostprocessor { get; set; }
+
         #endregion
 
         #region API
@@ -130,6 +135,7 @@ namespace SharpGLTF.Schema2
             other.BuffersMaxSize = this.BuffersMaxSize;
             other._JsonOptions = this._JsonOptions;
             other.Validation = this.Validation;
+            other.JsonPostprocessor = this.JsonPostprocessor;
         }
 
         #endregion
@@ -146,10 +152,9 @@ namespace SharpGLTF.Schema2
         /// <param name="settings">Optional settings.</param>
         public void Save(string filePath, WriteSettings settings = null)
         {
-            Guard.FilePathMustBeValid(filePath, nameof(filePath));
+            Guard.NotNull(filePath, nameof(filePath));
 
             bool isGltfExtension = filePath
-                .ToLower(System.Globalization.CultureInfo.InvariantCulture)
                 .EndsWith(".gltf", StringComparison.OrdinalIgnoreCase);
 
             if (isGltfExtension) SaveGLTF(filePath, settings);
@@ -163,12 +168,14 @@ namespace SharpGLTF.Schema2
         /// <param name="settings">Optional settings.</param>
         public void SaveGLB(string filePath, WriteSettings settings = null)
         {
-            Guard.FilePathMustBeValid(filePath, nameof(filePath));
+            if (!(settings is WriteContext context))
+            {
+                context = WriteContext
+                    .CreateFromFile(filePath)
+                    .WithSettingsFrom(settings);
+            }
 
-            var context = WriteContext
-                .CreateFromFile(filePath)
-                .WithBinarySettings()
-                .WithSettingsFrom(settings);
+            context.WithBinarySettings();
 
             var name = Path.GetFileNameWithoutExtension(filePath);
 
@@ -185,15 +192,34 @@ namespace SharpGLTF.Schema2
         /// </remarks>
         public void SaveGLTF(string filePath, WriteSettings settings = null)
         {
-            Guard.FilePathMustBeValid(filePath, nameof(filePath));
+            if (!(settings is WriteContext context))
+            {
+                context = WriteContext
+                    .CreateFromFile(filePath)
+                    .WithSettingsFrom(settings);
+            }
 
-            var context = WriteContext
-                .CreateFromFile(filePath)
-                .WithSettingsFrom(settings);
+            context.WithTextSettings();
 
             var name = Path.GetFileNameWithoutExtension(filePath);
 
             context.WriteTextSchema2(name, this);
+        }
+
+        [Obsolete("Use GetJsonPreview", true)]
+        public string GetJSON(bool indented) { return GetJsonPreview(); }
+
+        /// <summary>
+        /// Gets the JSON document of this <see cref="MODEL"/>.
+        /// </summary>
+        /// <returns>A JSON content.</returns>
+        /// <remarks>
+        /// ⚠ Beware: this method serializes the current model into a json, without taking care of the binary buffers,
+        /// so the produced json might not be usable!
+        /// </remarks>
+        public string GetJsonPreview()
+        {
+            return _GetJSON(true);
         }
 
         /// <summary>
@@ -201,21 +227,16 @@ namespace SharpGLTF.Schema2
         /// </summary>
         /// <param name="indented">The formatting of the JSON document.</param>
         /// <returns>A JSON content.</returns>
-        public string GetJSON(bool indented)
+        internal string _GetJSON(bool indented)
         {
             var options = new System.Text.Json.JsonWriterOptions
             {
                 Indented = indented
             };
 
-            return GetJSON(options);
-        }
-
-        public string GetJSON(System.Text.Json.JsonWriterOptions options)
-        {
             using (var mm = new System.IO.MemoryStream())
             {
-                _WriteJSON(mm, options);
+                _WriteJSON(mm, options, null);
 
                 mm.Position = 0;
 
@@ -255,12 +276,7 @@ namespace SharpGLTF.Schema2
                 .CreateFromStream(stream)
                 .WithSettingsFrom(settings);
 
-            if (settings != null)
-            {
-                // override settings with required values for GLB writing.
-                context.MergeBuffers = true;
-                context.ImageWriting = ResourceWriteMode.Default;
-            }
+            context.WithBinarySettings();
 
             context.WriteBinarySchema2("model", this);
         }
@@ -269,11 +285,39 @@ namespace SharpGLTF.Schema2
 
         #region core
 
-        internal void _WriteJSON(System.IO.Stream sw, System.Text.Json.JsonWriterOptions options)
+        internal void _WriteJSON(System.IO.Stream sw, System.Text.Json.JsonWriterOptions options, JsonFilterCallback filter)
         {
-            using (var writer = new System.Text.Json.Utf8JsonWriter(sw, options))
+            if (filter == null)
             {
-                this.Serialize(writer);
+                using (var writer = new System.Text.Json.Utf8JsonWriter(sw, options))
+                {
+                    this.Serialize(writer);
+                }
+
+                return;
+            }
+
+            string text = null;
+
+            using (var mm = new System.IO.MemoryStream())
+            {
+                _WriteJSON(mm, options, null);
+
+                mm.Position = 0;
+
+                using (var ss = new System.IO.StreamReader(mm))
+                {
+                    text = ss.ReadToEnd();
+                }
+            }
+
+            text = filter.Invoke(text);
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+
+            using (var mm = new System.IO.MemoryStream(bytes, false))
+            {
+                mm.CopyTo(sw);
             }
         }
 

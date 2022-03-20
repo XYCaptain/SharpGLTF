@@ -52,10 +52,22 @@ namespace SharpGLTF.Scenes
             return clone;
         }
 
+        [Obsolete("Use LoadDefaultScene(...); or LoadAllScenes(...) instead.", true)]
         public static SceneBuilder Load(string filePath, ReadSettings settings = null)
         {
+            return LoadDefaultScene(filePath, settings);
+        }
+
+        public static SceneBuilder LoadDefaultScene(string filePath, ReadSettings settings = null)
+        {
             var mdl = ModelRoot.Load(filePath, settings);
-            return mdl.DefaultScene.ToSceneBuilder();
+            return CreateFrom(mdl.DefaultScene);
+        }
+
+        public static SceneBuilder[] LoadAllScenes(string filePath, ReadSettings settings = null)
+        {
+            var mdl = ModelRoot.Load(filePath, settings);
+            return CreateFrom(mdl);
         }
 
         #endregion
@@ -132,6 +144,7 @@ namespace SharpGLTF.Scenes
         {
             Guard.NotNull(mesh, nameof(mesh));
             Guard.IsTrue(meshWorldMatrix.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(meshWorldMatrix));
+            Guard.NotNull(joints, nameof(joints));
             GuardAll.NotNull(joints, nameof(joints));
 
             var instance = new InstanceBuilder(this);
@@ -233,6 +246,7 @@ namespace SharpGLTF.Scenes
         {
             return _Instances
                 .Select(item => item.Content.GetArmatureRoot())
+                .Where(item => item != null)
                 .Distinct()
                 .ToList();
         }
@@ -250,7 +264,15 @@ namespace SharpGLTF.Scenes
         /// </remarks>
         public void ApplyBasisTransform(Matrix4x4 basisTransform, string basisNodeName = "BasisTransform")
         {
+            if (basisTransform == Matrix4x4.Identity) return;
+
             Guard.IsTrue(basisTransform.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(basisTransform));
+
+            // find all explicit transforms
+            foreach (var fixedXform in _Instances.Select(item => item.Content).OfType<FixedTransformer>())
+            {
+                fixedXform.ChildTransform = Transforms.AffineTransform.Multiply(fixedXform.ChildTransform, basisTransform);
+            }
 
             // gather all root nodes:
             var rootNodes = this.FindArmatures();
@@ -306,8 +328,7 @@ namespace SharpGLTF.Scenes
             Guard.IsTrue(sceneTransform.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(sceneTransform));
 
             scene = scene.DeepClone();
-
-            if (sceneTransform != Matrix4x4.Identity) scene.ApplyBasisTransform(sceneTransform);
+            scene.ApplyBasisTransform(sceneTransform);
 
             this._Instances.AddRange(scene._Instances);
 

@@ -14,7 +14,7 @@ namespace SharpGLTF.Materials
     /// Represents the root object of a material instance structure.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("{_DebuggerDisplay(),nq}")]
-    public partial class MaterialBuilder : BaseBuilder
+    public partial class MaterialBuilder : BaseBuilder, ICloneable
     {
         #region debug
 
@@ -51,6 +51,8 @@ namespace SharpGLTF.Materials
 
         public MaterialBuilder(string name = null)
             : base(name) { }
+
+        Object ICloneable.Clone() { return new MaterialBuilder(this); }
 
         public MaterialBuilder Clone() { return new MaterialBuilder(this); }
 
@@ -97,7 +99,7 @@ namespace SharpGLTF.Materials
         /// <summary>
         /// Gets or sets a value indicating whether triangles must be rendered from both sides.
         /// </summary>
-        public Boolean DoubleSided { get; set; } = false;
+        public Boolean DoubleSided { get; set; }
 
         public String ShaderStyle
         {
@@ -149,7 +151,7 @@ namespace SharpGLTF.Materials
             h ^= x.AlphaCutoff.GetHashCode();
             h ^= x.DoubleSided.GetHashCode();
             h ^= x.IndexOfRefraction.GetHashCode();
-            h ^= x.ShaderStyle.GetHashCode();
+            h ^= x.ShaderStyle.GetHashCode(StringComparison.InvariantCulture);
 
             h ^= x._Channels
                 .Select(item => ChannelBuilder.GetContentHashCode(item))
@@ -500,48 +502,56 @@ namespace SharpGLTF.Materials
         public MaterialBuilder WithClearCoat(IMAGEFILE imageFile, float intensity)
         {
             WithChannelImage(KnownChannel.ClearCoat, imageFile);
-            WithChannelParam(KnownChannel.ClearCoat, new Vector4(intensity, 0, 0, 0));
+            // WithChannelParam(KnownChannel.ClearCoat, new Vector4(intensity, 0, 0, 0));
+            WithChannelParam(KnownChannel.ClearCoat, KnownProperty.ClearCoatFactor, intensity);
             return this;
         }
 
         public MaterialBuilder WithClearCoatRoughness(IMAGEFILE imageFile, float roughness)
         {
             WithChannelImage(KnownChannel.ClearCoatRoughness, imageFile);
-            WithChannelParam(KnownChannel.ClearCoatRoughness, new Vector4(roughness, 0, 0, 0));
+            // WithChannelParam(KnownChannel.ClearCoatRoughness, new Vector4(roughness, 0, 0, 0));
+            WithChannelParam(KnownChannel.ClearCoatRoughness, KnownProperty.RoughnessFactor, roughness);
             return this;
         }
 
         public MaterialBuilder WithTransmission(IMAGEFILE imageFile, float intensity)
         {
             WithChannelImage(KnownChannel.Transmission, imageFile);
-            WithChannelParam(KnownChannel.Transmission, new Vector4(intensity, 0, 0, 0));
+            // WithChannelParam(KnownChannel.Transmission, new Vector4(intensity, 0, 0, 0));
+            WithChannelParam(KnownChannel.Transmission, KnownProperty.TransmissionFactor, intensity);
             return this;
         }
 
         public MaterialBuilder WithSpecularColor(IMAGEFILE imageFile, Vector3? rgb = null)
         {
             WithChannelImage(KnownChannel.SpecularColor, imageFile);
-            if (rgb.HasValue) WithChannelParam(KnownChannel.SpecularColor, new Vector4(rgb.Value, 0));
+            // if (rgb.HasValue) WithChannelParam(KnownChannel.SpecularColor, new Vector4(rgb.Value, 0));
+            if (rgb.HasValue) WithChannelParam(KnownChannel.SpecularColor, KnownProperty.RGB, rgb.Value);
             return this;
         }
 
         public MaterialBuilder WithSpecularFactor(IMAGEFILE imageFile, float factor)
         {
             WithChannelImage(KnownChannel.SpecularFactor, imageFile);
-            WithChannelParam(KnownChannel.SpecularFactor, new Vector4(factor, 0, 0, 0));
+            // WithChannelParam(KnownChannel.SpecularFactor, new Vector4(factor, 0, 0, 0));
+            WithChannelParam(KnownChannel.SpecularFactor, KnownProperty.SpecularFactor, factor);
             return this;
         }
 
         public MaterialBuilder WithVolumeThickness(IMAGEFILE imageFile, float factor)
         {
             WithChannelImage(KnownChannel.VolumeThickness, imageFile);
-            WithChannelParam(KnownChannel.VolumeThickness, new Vector4(factor, 0, 0, 0));
+            // WithChannelParam(KnownChannel.VolumeThickness, new Vector4(factor, 0, 0, 0));
+            WithChannelParam(KnownChannel.VolumeThickness, KnownProperty.ThicknessFactor, factor);
             return this;
         }
 
         public MaterialBuilder WithVolumeAttenuation(Vector3 color, float distance)
         {
-            WithChannelParam(KnownChannel.VolumeAttenuation, new Vector4(color, distance));
+            // WithChannelParam(KnownChannel.VolumeAttenuation, new Vector4(color, distance));
+            WithChannelParam(KnownChannel.VolumeAttenuation, KnownProperty.RGB, color);
+            WithChannelParam(KnownChannel.VolumeAttenuation, KnownProperty.AttenuationDistance, distance);
             return this;
         }
 

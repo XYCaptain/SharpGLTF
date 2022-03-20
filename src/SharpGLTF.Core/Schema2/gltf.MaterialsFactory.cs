@@ -43,6 +43,8 @@ namespace SharpGLTF.Schema2
         /// </param>
         public void InitializePBRMetallicRoughness(params string[] extensionNames)
         {
+            Guard.NotNull(extensionNames, nameof(extensionNames));
+
             if (this._pbrMetallicRoughness == null) this._pbrMetallicRoughness = new MaterialPBRMetallicRoughness();
 
             ClearExtensions();
@@ -89,7 +91,7 @@ namespace SharpGLTF.Schema2
             if (channels != null) { foreach (var c in channels) yield return c; }
 
             channels = this.GetExtension<MaterialClearCoat>()?.GetChannels(this);
-            if (channels != null) {foreach (var c in channels) yield return c; }
+            if (channels != null) { foreach (var c in channels) yield return c; }
 
             channels = this.GetExtension<MaterialTransmission>()?.GetChannels(this);
             if (channels != null) { foreach (var c in channels) yield return c; }
@@ -103,17 +105,20 @@ namespace SharpGLTF.Schema2
             channels = this.GetExtension<MaterialVolume>()?.GetChannels(this);
             if (channels != null) { foreach (var c in channels) yield return c; }
 
-            var normalParam = new MaterialParameter(MaterialParameter.Key.NormalScale,
+            var normalParam = new _MaterialParameter<float>(
+                _MaterialParameterKey.NormalScale,
                 MaterialNormalTextureInfo.ScaleDefault,
                 () => _GetNormalTexture(false)?.Scale ?? MaterialNormalTextureInfo.ScaleDefault,
                 value => _GetNormalTexture(true).Scale = value);
 
-            var occlusionParam = new MaterialParameter(MaterialParameter.Key.OcclusionStrength,
+            var occlusionParam = new _MaterialParameter<float>(
+                _MaterialParameterKey.OcclusionStrength,
                 MaterialOcclusionTextureInfo.StrengthDefault,
                 () => _GetOcclusionTexture(false)?.Strength ?? MaterialOcclusionTextureInfo.StrengthDefault,
                 value => _GetOcclusionTexture(true).Strength = value);
 
-            var emissiveParam = new MaterialParameter(MaterialParameter.Key.RGB,
+            var emissiveParam = new _MaterialParameter<Vector3>(
+                _MaterialParameterKey.RGB,
                 _emissiveFactorDefault,
                 () => this._emissiveFactor.AsValue(_emissiveFactorDefault),
                 value => this._emissiveFactor = value.AsNullable(_emissiveFactorDefault, Vector3.Zero, Vector3.One));
@@ -201,9 +206,9 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var colorParam = new MaterialParameter(MaterialParameter.Key.RGBA, _baseColorFactorDefault, () => Color, v => Color = v);
-            var metallicParam = new MaterialParameter(MaterialParameter.Key.MetallicFactor, (float)_metallicFactorDefault, () => MetallicFactor, v => MetallicFactor = v);
-            var roughnessParam = new MaterialParameter(MaterialParameter.Key.RoughnessFactor, (float)_roughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
+            var colorParam = new _MaterialParameter<Vector4>(_MaterialParameterKey.RGBA, _baseColorFactorDefault, () => Color, v => Color = v);
+            var metallicParam = new _MaterialParameter<float>(_MaterialParameterKey.MetallicFactor, (float)_metallicFactorDefault, () => MetallicFactor, v => MetallicFactor = v);
+            var roughnessParam = new _MaterialParameter<float>(_MaterialParameterKey.RoughnessFactor, (float)_roughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
 
             yield return new MaterialChannel(material, "BaseColor", _GetBaseTexture, colorParam);
             yield return new MaterialChannel(material, "MetallicRoughness", _GetMetallicTexture, metallicParam, roughnessParam);
@@ -270,9 +275,9 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var diffuseParam = new MaterialParameter(MaterialParameter.Key.RGBA, _diffuseFactorDefault, () => DiffuseFactor, v => DiffuseFactor = v);
-            var specularParam = new MaterialParameter(MaterialParameter.Key.SpecularFactor, _specularFactorDefault, () => SpecularFactor, v => SpecularFactor = v);
-            var glossinessParam = new MaterialParameter(MaterialParameter.Key.GlossinessFactor, (float)_glossinessFactorDefault, () => GlossinessFactor, v => GlossinessFactor = v);
+            var diffuseParam = new _MaterialParameter<Vector4>(_MaterialParameterKey.RGBA, _diffuseFactorDefault, () => DiffuseFactor, v => DiffuseFactor = v);
+            var specularParam = new _MaterialParameter<Vector3>(_MaterialParameterKey.SpecularFactor, _specularFactorDefault, () => SpecularFactor, v => SpecularFactor = v);
+            var glossinessParam = new _MaterialParameter<float>(_MaterialParameterKey.GlossinessFactor, (float)_glossinessFactorDefault, () => GlossinessFactor, v => GlossinessFactor = v);
 
             yield return new MaterialChannel(material, "Diffuse", _GetDiffuseTexture, diffuseParam);
             yield return new MaterialChannel(material, "SpecularGlossiness", _GetGlossinessTexture, specularParam, glossinessParam);
@@ -344,9 +349,9 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var clearCoatParam = new MaterialParameter(MaterialParameter.Key.ClearCoatFactor, (float)_clearcoatFactorDefault, () => ClearCoatFactor, v => ClearCoatFactor = v);
-            var roughnessParam = new MaterialParameter(MaterialParameter.Key.RoughnessFactor, (float)_clearcoatRoughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
-            var normScaleParam = new MaterialParameter(MaterialParameter.Key.NormalScale,
+            var clearCoatParam = new _MaterialParameter<float>(_MaterialParameterKey.ClearCoatFactor, (float)_clearcoatFactorDefault, () => ClearCoatFactor, v => ClearCoatFactor = v);
+            var roughnessParam = new _MaterialParameter<float>(_MaterialParameterKey.RoughnessFactor, (float)_clearcoatRoughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
+            var normScaleParam = new _MaterialParameter<float>(_MaterialParameterKey.NormalScale,
                 MaterialNormalTextureInfo.ScaleDefault,
                 () => _GetClearCoatNormalTexture(false)?.Scale ?? MaterialNormalTextureInfo.ScaleDefault,
                 v => _GetClearCoatNormalTexture(true).Scale = v);
@@ -386,7 +391,7 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var transmissionParam = new MaterialParameter(MaterialParameter.Key.TransmissionFactor, (float)_transmissionFactorDefault, () => TransmissionFactor, v => TransmissionFactor = v);
+            var transmissionParam = new _MaterialParameter<float>(_MaterialParameterKey.TransmissionFactor, (float)_transmissionFactorDefault, () => TransmissionFactor, v => TransmissionFactor = v);
 
             yield return new MaterialChannel(material, "Transmission", _GetTransmissionTexture, transmissionParam);
         }
@@ -408,6 +413,7 @@ namespace SharpGLTF.Schema2
         {
             return base.GetLogicalChildren().ConcatElements(_sheenColorTexture, _sheenRoughnessTexture);
         }
+
         protected override void OnValidateContent(ValidationContext validate)
         {
             base.OnValidateContent(validate);
@@ -439,8 +445,8 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var colorParam = new MaterialParameter(MaterialParameter.Key.RGB, _sheenColorFactorDefault, () => ColorFactor, v => ColorFactor = v);
-            var roughnessParam = new MaterialParameter(MaterialParameter.Key.RoughnessFactor, _sheenRoughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
+            var colorParam = new _MaterialParameter<Vector3>(_MaterialParameterKey.RGB, _sheenColorFactorDefault, () => ColorFactor, v => ColorFactor = v);
+            var roughnessParam = new _MaterialParameter<float>(_MaterialParameterKey.RoughnessFactor, _sheenRoughnessFactorDefault, () => RoughnessFactor, v => RoughnessFactor = v);
 
             yield return new MaterialChannel(material, "SheenColor", _GetSheenColorTexture, colorParam);
             yield return new MaterialChannel(material, "SheenRoughness", _GetSheenRoughnessTexture, roughnessParam);
@@ -536,8 +542,8 @@ namespace SharpGLTF.Schema2
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var colorParam = new MaterialParameter(MaterialParameter.Key.RGB, _specularColorFactorDefault, () => SpecularColor, v => SpecularColor = v);
-            var factorParam = new MaterialParameter(MaterialParameter.Key.SpecularFactor, (float)_specularFactorDefault, () => SpecularFactor, v => SpecularFactor = v);
+            var colorParam = new _MaterialParameter<Vector3>(_MaterialParameterKey.RGB, _specularColorFactorDefault, () => SpecularColor, v => SpecularColor = v);
+            var factorParam = new _MaterialParameter<float>(_MaterialParameterKey.SpecularFactor, (float)_specularFactorDefault, () => SpecularFactor, v => SpecularFactor = v);
 
             yield return new MaterialChannel(material, "SpecularColor", _GetSpecularColorTexture, colorParam);
             yield return new MaterialChannel(material, "SpecularFactor", _GetSpecularFactorTexture, factorParam);
@@ -592,15 +598,15 @@ namespace SharpGLTF.Schema2
 
         public float AttenuationDistance
         {
-            get => (float)_attenuationDistance.AsValue((double)0);
-            set => _attenuationDistance = value > _attenuationDistanceExclusiveMinimum ? value : throw new ArgumentOutOfRangeException();
+            get => (float)_attenuationDistance.AsValue(0);
+            set => _attenuationDistance = value > _attenuationDistanceExclusiveMinimum ? value : throw new ArgumentOutOfRangeException(nameof(value));
         }
 
         public IEnumerable<MaterialChannel> GetChannels(Material material)
         {
-            var thicknessParam = new MaterialParameter(MaterialParameter.Key.ThicknessFactor, (float)_thicknessFactorDefault, () => ThicknessFactor, v => ThicknessFactor = v);
-            var attColorParam = new MaterialParameter(MaterialParameter.Key.RGB, _attenuationColorDefault, () => AttenuationColor, v => AttenuationColor = v);
-            var attDistParam = new MaterialParameter(MaterialParameter.Key.AttenuationDistance, 0, () => AttenuationDistance, v => AttenuationDistance = v);
+            var thicknessParam = new _MaterialParameter<float>(_MaterialParameterKey.ThicknessFactor, (float)_thicknessFactorDefault, () => ThicknessFactor, v => ThicknessFactor = v);
+            var attColorParam = new _MaterialParameter<Vector3>(_MaterialParameterKey.RGB, _attenuationColorDefault, () => AttenuationColor, v => AttenuationColor = v);
+            var attDistParam = new _MaterialParameter<float>(_MaterialParameterKey.AttenuationDistance, 0, () => AttenuationDistance, v => AttenuationDistance = v);
 
             yield return new MaterialChannel(material, "VolumeThickness", _GetThicknessTexture, thicknessParam);
             yield return new MaterialChannel(material, "VolumeAttenuation", onCreate => null, attColorParam, attDistParam);

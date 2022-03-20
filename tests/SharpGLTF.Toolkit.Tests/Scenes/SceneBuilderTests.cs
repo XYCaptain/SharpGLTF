@@ -156,7 +156,7 @@ namespace SharpGLTF.Scenes
             var materials = Enumerable
                 .Range(0, 10)
                 .Select(idx => new MaterialBuilder()
-                .WithChannelParam("BaseColor", new Vector4(rnd.NextVector3(), 1)))
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(rnd.NextVector3(), 1)))
                 .ToList();
 
             // create meshes
@@ -254,11 +254,11 @@ namespace SharpGLTF.Scenes
             // create two materials
 
             var pink = new MaterialBuilder("material1")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 0, 1, 1))
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 0, 1, 1))
                 .WithDoubleSide(true);
 
             var yellow = new MaterialBuilder("material2")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 1, 0, 1))
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 1, 0, 1))
                 .WithDoubleSide(true);
 
             // create the mesh            
@@ -341,11 +341,11 @@ namespace SharpGLTF.Scenes
             // create two materials
 
             var pink = new MaterialBuilder("material1")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 0, 1, 1))
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 0, 1, 1))
                 .WithDoubleSide(true);
 
             var yellow = new MaterialBuilder("material2")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 1, 0, 1))
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 1, 0, 1))
                 .WithDoubleSide(true);
 
             // create the mesh            
@@ -452,10 +452,10 @@ namespace SharpGLTF.Scenes
             // create two materials
 
             var pink = new MaterialBuilder("material1")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 0, 1, 1));
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 0, 1, 1));
 
             var yellow = new MaterialBuilder("material2")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 1, 0, 1));
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 1, 0, 1));
 
             var scene = new SceneBuilder();
 
@@ -670,8 +670,8 @@ namespace SharpGLTF.Scenes
             // create materials
             var materials = Enumerable
                 .Range(0, 10)
-                .Select(idx => new Materials.MaterialBuilder($"material{idx}")
-                .WithChannelParam("BaseColor", new Vector4(rnd.NextVector3(), 1)))
+                .Select(idx => new MaterialBuilder($"material{idx}")
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(rnd.NextVector3(), 1)))
                 .ToList();
 
             // create meshes            
@@ -730,7 +730,7 @@ namespace SharpGLTF.Scenes
         public void CreateSceneComposition()
         {
             // load Polly model
-            var polly = SceneBuilder.Load(TestFiles.GetPollyFileModelPath(), Validation.ValidationMode.TryFix);
+            var polly = SceneBuilder.LoadDefaultScene(TestFiles.GetPollyFileModelPath(), Validation.ValidationMode.TryFix);
 
             var xform0 = Matrix4x4.CreateFromYawPitchRoll(1, 0, 0) * Matrix4x4.CreateTranslation(1.5f, 0, 0);
             var xform1 = Matrix4x4.CreateFromYawPitchRoll(0, 1, 0) * Matrix4x4.CreateTranslation(-1.5f, 1, 0);
@@ -847,10 +847,10 @@ namespace SharpGLTF.Scenes
             // create two materials
 
             var pink = new MaterialBuilder("material1")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(1, 0, 1, 1));
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(1, 0, 1, 1));
 
             var blue = new MaterialBuilder("material2")
-                .WithChannelParam(KnownChannel.BaseColor, new Vector4(0, 0, 1, 1));
+                .WithChannelParam(KnownChannel.BaseColor, KnownProperty.RGBA, new Vector4(0, 0, 1, 1));
 
             var mesh1 = VPOSNRM.CreateCompatibleMesh("shape1");
             var prim1 = mesh1.UsePrimitive(pink);
@@ -901,7 +901,77 @@ namespace SharpGLTF.Scenes
             return mesh1;
         }
 
-   
+
+        [Test]
+        public void TestWholeModelConversionRoundtrip()
+        {
+            // create a cube mesh. This mesh will be shared along the way:
+
+            var cube = new MeshBuilder<VertexPosition, VertexEmpty, VertexEmpty>("Cube");
+            cube.AddCube(MaterialBuilder.CreateDefault(), Matrix4x4.Identity);
+
+            // create a gltf with 2 scenes:
+
+            var model1 = ModelRoot.CreateModel();
+            var m = model1.CreateMesh(cube);
+            model1.UseScene("Scene1").CreateNode("Node1").Mesh = m;
+            model1.UseScene("Scene2").CreateNode("Node2").Mesh = m;
+
+            // convert to SceneBuilder:
+
+            var scenes = SceneBuilder.CreateFrom(model1).ToArray();
+            Assert.AreEqual(2, scenes.Length);
+
+            var mesh1 = scenes[0].Instances[0].Content.GetGeometryAsset();
+            var mesh2 = scenes[1].Instances[0].Content.GetGeometryAsset();
+
+            Assert.AreSame(mesh1, mesh2, "both scenes must share the same MeshBuilder");
+
+            // convert back to gltf:
+
+            var model2 = SceneBuilder.ToGltf2(scenes, SceneBuilderSchema2Settings.Default);
+
+            // verify the mesh is still shared.
+
+            Assert.AreEqual(2, model2.LogicalScenes.Count);
+            Assert.AreEqual(2, model2.LogicalNodes.Count);
+            Assert.AreEqual(1, model2.LogicalMeshes.Count); // check the mesh is shared between the 2 scenes
+        }
+
+        [Test]
+        public void TestSceneAddition()
+        {
+            // create a cube mesh. This mesh will be shared along the way:
+
+            var cube = new MeshBuilder<VertexPosition, VertexEmpty, VertexEmpty>("Cube");
+            cube.AddCube(MaterialBuilder.CreateDefault(), Matrix4x4.Identity);
+
+            // create a scene
+
+            var scene1 = new SceneBuilder();
+            scene1.AddRigidMesh(cube, Matrix4x4.Identity);
+
+            // create another scene
+
+            var scene2 = new SceneBuilder();
+            scene2.AddScene(scene1, Matrix4x4.CreateTranslation(4, 0, 0));
+
+            Assert.AreEqual(new Vector3(4, 0, 0), scene2.Instances.First().Content.GetPoseWorldMatrix().Translation);
+
+
+            scene2.AddScene(scene1, Matrix4x4.CreateTranslation(2, 0, 0));
+            scene2.AddScene(scene1, Matrix4x4.CreateTranslation(0, 0, 0));
+
+            // convert to gltf
+
+            var gltf = scene2.ToGltf2();
+
+            Assert.AreEqual(1, gltf.LogicalMeshes.Count);
+            Assert.AreEqual(3, gltf.LogicalNodes.Count);
+
+            gltf.AttachToCurrentTest("Three cubes.glb");
+        }
+
     }
 
 

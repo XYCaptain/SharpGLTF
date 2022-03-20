@@ -8,21 +8,23 @@ namespace SharpGLTF
     {
         #region lifecycle
 
-        public BaseBuilder() { }
+        protected BaseBuilder() { }
 
-        public BaseBuilder(string name)
+        protected BaseBuilder(string name)
         {
             this.Name = name;
         }
 
-        public BaseBuilder(string name, IO.JsonContent extras)
+        protected BaseBuilder(string name, IO.JsonContent extras)
         {
             this.Name = name;
             this.Extras = extras;
         }
 
-        public BaseBuilder(BaseBuilder other)
+        protected BaseBuilder(BaseBuilder other)
         {
+            Guard.NotNull(other, nameof(other));
+
             this.Name = other.Name;
             this.Extras = other.Extras.DeepClone();
         }
@@ -50,7 +52,7 @@ namespace SharpGLTF
 
         protected static int GetContentHashCode(BaseBuilder x)
         {
-            return x?.Name?.GetHashCode() ?? 0;
+            return x?.Name?.GetHashCode(StringComparison.InvariantCulture) ?? 0;
         }
 
         protected static bool AreEqualByContent(BaseBuilder x, BaseBuilder y)
