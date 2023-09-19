@@ -25,7 +25,10 @@ namespace SharpGLTF.Materials
         BaseColor,
         MetallicRoughness,
 
+        [Obsolete("This channel is used by KHR_materials_pbrSpecularGlossiness extension, which has been deprecated by Khronos; use BaseColor instead.")]
         Diffuse,
+
+        [Obsolete("This channel is used by KHR_materials_pbrSpecularGlossiness extension, which has been deprecated by Khronos; use SpecularColor instead.")]
         SpecularGlossiness,
 
         ClearCoat,
@@ -42,21 +45,31 @@ namespace SharpGLTF.Materials
 
         VolumeThickness,
         VolumeAttenuation,
+
+        Iridescence,
+        IridescenceThickness,
     }
 
     /// <summary>
     /// Enumeration of channel properties used in <see cref="ChannelBuilder.Parameters"/>
     /// </summary>
     /// <remarks>
-    /// This enumeration must match <see cref="Schema2.MaterialParameter.Key"/>
+    /// This enumeration must match <see cref="Schema2._MaterialParameterKey"/>
     /// </remarks>
     public enum KnownProperty
     {
+        Unknown = 0,
+
         RGB,
         RGBA,
 
         NormalScale,
         OcclusionStrength,
+        EmissiveStrength,
+
+        Minimum, Maximum,
+
+        IndexOfRefraction,
 
         MetallicFactor,
         RoughnessFactor,
@@ -65,6 +78,7 @@ namespace SharpGLTF.Materials
         ClearCoatFactor,
         ThicknessFactor,
         TransmissionFactor,
+        IridescenceFactor,
         AttenuationDistance,
     }
 
@@ -72,11 +86,16 @@ namespace SharpGLTF.Materials
     {
         private IReadOnlyList<KnownChannel> _GetValidChannels()
         {
+
             switch (ShaderStyle)
             {
                 case SHADERUNLIT: return _UnlitChannels;
                 case SHADERPBRMETALLICROUGHNESS: return _MetRouChannels;
+
+                #pragma warning disable CS0618 // Type or member is obsolete
                 case SHADERPBRSPECULARGLOSSINESS: return _SpeGloChannels;
+                #pragma warning restore CS0618 // Type or member is obsolete
+
                 default: throw new NotImplementedException();
             }
         }
@@ -107,12 +126,13 @@ namespace SharpGLTF.Materials
             KnownChannel.VolumeAttenuation
         };
 
+        [Obsolete("Deprecated by Khronos")]
         private static readonly KnownChannel[] _SpeGloChannels = new[]
         {
             KnownChannel.Normal,
             KnownChannel.Occlusion,
             KnownChannel.Emissive,
-
+            
             KnownChannel.Diffuse,
             KnownChannel.SpecularGlossiness,
         };
@@ -132,7 +152,11 @@ namespace SharpGLTF.Materials
         {
             switch (key)
             {
-                case KnownChannel.Emissive: yield return new _Property(KnownProperty.RGB, Vector3.Zero); break;
+                case KnownChannel.Emissive:
+                    yield return new _Property(KnownProperty.RGB, Vector3.Zero);
+                    yield return new _Property(KnownProperty.EmissiveStrength, 1f);
+                    break;
+
                 case KnownChannel.Normal: yield return new _Property(KnownProperty.NormalScale, 1f); break;
                 case KnownChannel.Occlusion: yield return new _Property(KnownProperty.OcclusionStrength, 1f); break;
 

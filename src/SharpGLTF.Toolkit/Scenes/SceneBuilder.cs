@@ -9,6 +9,9 @@ using SharpGLTF.Schema2;
 
 using MESHBUILDER = SharpGLTF.Geometry.IMeshBuilder<SharpGLTF.Materials.MaterialBuilder>;
 
+using M4X4FACTORY = SharpGLTF.Transforms.Matrix4x4Factory;
+using AFFINEXFORM = SharpGLTF.Transforms.AffineTransform;
+
 namespace SharpGLTF.Scenes
 {
     /// <summary>
@@ -100,6 +103,12 @@ namespace SharpGLTF.Scenes
 
         #region API
 
+        /// <summary>
+        /// Adds a mesh instance to the scene, attached to an animatable <see cref="NodeBuilder"/>
+        /// </summary>
+        /// <param name="mesh">The mesh to add.</param>
+        /// <param name="node">The node to which the mesh will be attached.</param>
+        /// <returns>The instance representing this mesh-node pair.</returns>
         public InstanceBuilder AddRigidMesh(MESHBUILDER mesh, NodeBuilder node)
         {
             Guard.NotNull(mesh, nameof(mesh));
@@ -113,7 +122,17 @@ namespace SharpGLTF.Scenes
             return instance;
         }
 
-        public InstanceBuilder AddRigidMesh(MESHBUILDER mesh, Transforms.AffineTransform meshWorldTransform)
+        /// <summary>
+        /// Adds a mesh instance to the scene, at the given location.
+        /// </summary>
+        /// <param name="mesh">The mesh to add.</param>
+        /// <param name="meshWorldTransform">The location of the mesh.</param>
+        /// <returns>The instance representing this mesh.</returns>
+        /// <remarks>
+        /// Mesh instances with a fixed transform cannot be animated,
+        /// If you need morph animations, use <see cref="AddRigidMesh(MESHBUILDER, NodeBuilder)"/> instead.
+        /// </remarks>
+        public InstanceBuilder AddRigidMesh(MESHBUILDER mesh, AFFINEXFORM meshWorldTransform)
         {
             Guard.NotNull(mesh, nameof(mesh));
 
@@ -125,7 +144,18 @@ namespace SharpGLTF.Scenes
             return instance;
         }
 
-        public InstanceBuilder AddRigidMesh(MESHBUILDER mesh, NodeBuilder node, Transforms.AffineTransform instanceTransform)
+        /// <summary>
+        /// Adds a mesh instance to the scene, at the given location, relative to the given node.
+        /// </summary>
+        /// <param name="mesh">The mesh to add.</param>
+        /// <param name="node">The parent node.</param>
+        /// <param name="instanceTransform">The location of the mesh.</param>
+        /// <returns>The instance representing this mesh.</returns>
+        /// <remarks>
+        /// Mesh instances with a fixed transform cannot be animated,
+        /// If you need morph animations, use <see cref="AddRigidMesh(MESHBUILDER, NodeBuilder)"/> instead.
+        /// </remarks>
+        public InstanceBuilder AddRigidMesh(MESHBUILDER mesh, NodeBuilder node, AFFINEXFORM instanceTransform)
         {
             Guard.NotNull(mesh, nameof(mesh));
             Guard.NotNull(node, nameof(node));
@@ -143,7 +173,7 @@ namespace SharpGLTF.Scenes
         public InstanceBuilder AddSkinnedMesh(MESHBUILDER mesh, Matrix4x4 meshWorldMatrix, params NodeBuilder[] joints)
         {
             Guard.NotNull(mesh, nameof(mesh));
-            Guard.IsTrue(meshWorldMatrix.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(meshWorldMatrix));
+            M4X4FACTORY.GuardMatrix(nameof(meshWorldMatrix), meshWorldMatrix, M4X4FACTORY.MatrixCheck.WorldTransform);
             Guard.NotNull(joints, nameof(joints));
             GuardAll.NotNull(joints, nameof(joints));
 
@@ -159,7 +189,11 @@ namespace SharpGLTF.Scenes
         {
             Guard.NotNull(mesh, nameof(mesh));
             GuardAll.NotNull(joints.Select(item => item.Joint), nameof(joints));
-            GuardAll.AreTrue(joints.Select(item => item.InverseBindMatrix.IsValid(_Extensions.MatrixCheck.InverseBindMatrix)), nameof(joints), "Invalid matrix");
+
+            for(int i=0; i < joints.Length; i++)
+            {
+                M4X4FACTORY.GuardMatrix($"{nameof(joints)}[{i}]", joints[i].InverseBindMatrix, M4X4FACTORY.MatrixCheck.InverseBindMatrix, 0.01f);
+            }            
 
             var instance = new InstanceBuilder(this);
             instance.Content = new SkinnedTransformer(mesh, joints);
@@ -191,26 +225,24 @@ namespace SharpGLTF.Scenes
             return AddCamera(camera, xform);
         }
 
-        public InstanceBuilder AddCamera(CameraBuilder camera, Matrix4x4 cameraMatrix)
+        public InstanceBuilder AddCamera(CameraBuilder camera, AFFINEXFORM cameraTransform)
         {
-            Guard.NotNull(camera, nameof(camera));
-            Guard.IsTrue(cameraMatrix.IsValid(_Extensions.MatrixCheck.LocalTransform), nameof(cameraMatrix));
+            Guard.NotNull(camera, nameof(camera));            
 
             var content = new CameraContent(camera);
             var instance = new InstanceBuilder(this);
-            instance.Content = new FixedTransformer(content, cameraMatrix);
+            instance.Content = new FixedTransformer(content, cameraTransform);
             _Instances.Add(instance);
             return instance;
         }
 
-        public InstanceBuilder AddLight(LightBuilder light, Matrix4x4 lightMatrix)
+        public InstanceBuilder AddLight(LightBuilder light, AFFINEXFORM lightTransform)
         {
-            Guard.NotNull(light, nameof(light));
-            Guard.IsTrue(lightMatrix.IsValid(_Extensions.MatrixCheck.LocalTransform), nameof(lightMatrix));
+            Guard.NotNull(light, nameof(light));           
 
             var content = new LightContent(light);
             var instance = new InstanceBuilder(this);
-            instance.Content = new FixedTransformer(content, lightMatrix);
+            instance.Content = new FixedTransformer(content, lightTransform);
             _Instances.Add(instance);
             return instance;
         }
@@ -257,21 +289,29 @@ namespace SharpGLTF.Scenes
         /// <param name="basisTransform">The transform to apply.</param>
         /// <param name="basisNodeName">The name of the dummy root node.</param>
         /// <remarks>
+        /// <para>
         /// In some circunstances, it's not possible to apply the
         /// <paramref name="basisTransform"/> to the nodes in the scene.<br/>
         /// In these cases a dummy node is created, and these
         /// nodes are made children of this dummy node.
+        /// </para>
+        /// <para>
+        /// This method is useful to switch axes (Z-UP or Y-UP) and left right handed mode.
+        /// </para>
+        /// <para>
+        /// This method should be called at the end, when the scene has been created completely.
+        /// </para>
         /// </remarks>
         public void ApplyBasisTransform(Matrix4x4 basisTransform, string basisNodeName = "BasisTransform")
         {
             if (basisTransform == Matrix4x4.Identity) return;
 
-            Guard.IsTrue(basisTransform.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(basisTransform));
+            M4X4FACTORY.GuardMatrix(nameof(basisTransform), basisTransform, M4X4FACTORY.MatrixCheck.WorldTransform);
 
             // find all explicit transforms
             foreach (var fixedXform in _Instances.Select(item => item.Content).OfType<FixedTransformer>())
             {
-                fixedXform.ChildTransform = Transforms.AffineTransform.Multiply(fixedXform.ChildTransform, basisTransform);
+                fixedXform.ChildTransform = AFFINEXFORM.Multiply(fixedXform.ChildTransform, basisTransform);
             }
 
             // gather all root nodes:
@@ -325,7 +365,8 @@ namespace SharpGLTF.Scenes
         public IReadOnlyList<InstanceBuilder> AddScene(SceneBuilder scene, Matrix4x4 sceneTransform)
         {
             Guard.NotNull(scene, nameof(scene));
-            Guard.IsTrue(sceneTransform.IsValid(_Extensions.MatrixCheck.WorldTransform), nameof(sceneTransform));
+
+            M4X4FACTORY.GuardMatrix(nameof(sceneTransform), sceneTransform, M4X4FACTORY.MatrixCheck.WorldTransform);
 
             scene = scene.DeepClone();
             scene.ApplyBasisTransform(sceneTransform);

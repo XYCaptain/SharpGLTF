@@ -7,7 +7,7 @@ using SharpGLTF.Collections;
 namespace SharpGLTF.Schema2
 {
     [System.Diagnostics.DebuggerDisplay("{_DebuggerDisplay(),nq}")]
-    public sealed partial class MeshPrimitive : IChildOf<Mesh>
+    public sealed partial class MeshPrimitive : IChildOfList<Mesh>
     {
         #region debug
 
@@ -42,7 +42,7 @@ namespace SharpGLTF.Schema2
         /// </summary>
         public Mesh LogicalParent { get; private set; }
 
-        void IChildOf<Mesh>._SetLogicalParent(Mesh parent, int index)
+        void IChildOfList<Mesh>.SetLogicalParent(Mesh parent, int index)
         {
             LogicalParent = parent;
             LogicalIndex = index;
@@ -227,22 +227,29 @@ namespace SharpGLTF.Schema2
 
         #region API - Morph Targets
 
-        public IReadOnlyDictionary<String, Accessor> GetMorphTargetAccessors(int idx)
+        public IReadOnlyDictionary<String, Accessor> GetMorphTargetAccessors(int targetIdx)
         {
-            return new ReadOnlyLinqDictionary<String, int, Accessor>(_targets[idx], alidx => this.LogicalParent.LogicalParent.LogicalAccessors[alidx]);
+            Guard.MustBeGreaterThanOrEqualTo(targetIdx, 0, nameof(targetIdx));
+            return new ReadOnlyLinqDictionary<String, int, Accessor>(_targets[targetIdx], alidx => this.LogicalParent.LogicalParent.LogicalAccessors[alidx]);
         }
 
-        public void SetMorphTargetAccessors(int idx, IReadOnlyDictionary<String, Accessor> accessors)
+        public void SetMorphTargetAccessors(int targetIdx, IReadOnlyDictionary<String, Accessor> accessors)
         {
+            Guard.MustBeGreaterThanOrEqualTo(targetIdx, 0, nameof(targetIdx));
             Guard.NotNull(accessors, nameof(accessors));
+
+            // morph targets must have at least one valid accessor.
+            // See https://github.com/KhronosGroup/glTF/issues/2154
+            Guard.MustBeGreaterThan(accessors.Count, 0, nameof(accessors));
+
             foreach (var kvp in accessors)
             {
                 Guard.MustShareLogicalParent(this.LogicalParent, kvp.Value, nameof(accessors));
             }
 
-            while (_targets.Count <= idx) _targets.Add(new Dictionary<string, int>());
+            while (_targets.Count <= targetIdx) _targets.Add(new Dictionary<string, int>());
 
-            var target = _targets[idx];
+            var target = _targets[targetIdx];
 
             target.Clear();
 
@@ -387,7 +394,7 @@ namespace SharpGLTF.Schema2
                 // strided buffer detected
                 if (overlap)
                 {
-                    ok = group.Sum(item => item.Format.ByteSizePadded) == group.Key.ByteStride;
+                    ok = group.Sum(item => item.Format.ByteSizePadded) <= group.Key.ByteStride;
                 }
 
                 // sequential buffer detected

@@ -16,10 +16,10 @@ namespace SharpGLTF.ThirdParty
     using VBColor1Texture1 = VertexBuilder<VertexPosition,VertexColor1Texture1,VertexEmpty>;
     using VBTexture1 = VertexBuilder<VertexPosition,VertexTexture1,VertexEmpty>;
 
+    [ResourcePathFormat("*\\Assets")]
+    [AttachmentPathFormat("*\\?", true)]
     internal class AceCebovTests
     {
-        private static string AssetsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Assets");
-
         [Test]
         public void TestMorphColorTargets()
         {
@@ -93,13 +93,13 @@ namespace SharpGLTF.ThirdParty
 
             // bypassing AttachToCurrentTest until glTFValidator is fixed.
 
-            var outPath = TestContext.CurrentContext.GetAttachmentPath("ColorMorphing.glb", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("ColorMorphing.glb")
+                .WriteObject(f => model.Save(f));
 
-            outPath = TestContext.CurrentContext.GetAttachmentPath("ColorMorphing.gltf", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("ColorMorphing.gltf")
+                .WriteObject(f => model.Save(f));
         }
 
         [Test]
@@ -109,7 +109,7 @@ namespace SharpGLTF.ThirdParty
             var material = new MaterialBuilder()
                 .WithDoubleSide(true)
                 .WithMetallicRoughnessShader()
-                .WithChannelImage(KnownChannel.BaseColor, new MemoryImage(Path.Combine(AssetsPath, "texture.png")));
+                .WithChannelImage(KnownChannel.BaseColor, new MemoryImage(new ResourceInfo("texture.png")));
 
             // create a mesh with two primitives, one for each material
 
@@ -171,13 +171,13 @@ namespace SharpGLTF.ThirdParty
 
             // bypassing AttachToCurrentTest until glTFValidator is fixed.
 
-            var outPath = TestContext.CurrentContext.GetAttachmentPath("TextureMorphing.glb", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("TextureMorphing.glb")
+                .WriteObject(f => model.Save(f));
 
-            outPath = TestContext.CurrentContext.GetAttachmentPath("TextureMorphing.gltf", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("TextureMorphing.gltf")
+                .WriteObject(f => model.Save(f));
         }
 
         [Test]
@@ -187,7 +187,7 @@ namespace SharpGLTF.ThirdParty
             var material = new MaterialBuilder()
                 .WithDoubleSide(true)
                 .WithMetallicRoughnessShader()
-                .WithChannelImage(KnownChannel.BaseColor, new MemoryImage(Path.Combine(AssetsPath, "texture.png")));
+                .WithChannelImage(KnownChannel.BaseColor, new MemoryImage(new ResourceInfo("texture.png")));
 
             // create a mesh with two primitives, one for each material
 
@@ -252,13 +252,13 @@ namespace SharpGLTF.ThirdParty
 
             // bypassing AttachToCurrentTest until glTFValidator is fixed.
 
-            var outPath = TestContext.CurrentContext.GetAttachmentPath("ColorAndTextureMorphing.glb", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("ColorAndTextureMorphing.glb")
+                .WriteObject(f => model.Save(f));
 
-            outPath = TestContext.CurrentContext.GetAttachmentPath("ColorAndTextureMorphing.gltf", true);
-            model.Save(outPath);
-            TestContext.AddTestAttachment(outPath);
+            AttachmentInfo
+                .From("ColorAndTextureMorphing.gltf")
+                .WriteObject(f => model.Save(f));
         }
     }
 }

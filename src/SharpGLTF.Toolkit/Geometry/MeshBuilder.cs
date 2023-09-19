@@ -51,7 +51,9 @@ namespace SharpGLTF.Geometry
     {
         #region lifecycle
 
-        public MeshBuilder(string name = null)
+        public MeshBuilder() : this(null) { }
+
+        public MeshBuilder(string name)
             : base(name)
         {
             // this is the recomended preprocesor for release/production
@@ -138,9 +140,9 @@ namespace SharpGLTF.Geometry
 
         #region API
 
-        public MorphTargetBuilder<TMaterial, TvG, TvS, TvM> UseMorphTarget(int index)
+        public MorphTargetBuilder<TMaterial, TvG, TvS, TvM> UseMorphTarget(int morphTargetIndex)
         {
-            return new MorphTargetBuilder<TMaterial, TvG, TvS, TvM>(this, index);
+            return new MorphTargetBuilder<TMaterial, TvG, TvS, TvM>(this, morphTargetIndex);
         }
 
         IMorphTargetBuilder IMeshBuilder<TMaterial>.UseMorphTarget(int index)

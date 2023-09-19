@@ -105,6 +105,9 @@ namespace SharpGLTF.Schema2
             channels = this.GetExtension<MaterialVolume>()?.GetChannels(this);
             if (channels != null) { foreach (var c in channels) yield return c; }
 
+            channels = this.GetExtension<MaterialIridescence>()?.GetChannels(this);
+            if (channels != null) { foreach (var c in channels) yield return c; }
+
             var normalParam = new _MaterialParameter<float>(
                 _MaterialParameterKey.NormalScale,
                 MaterialNormalTextureInfo.ScaleDefault,
@@ -117,7 +120,7 @@ namespace SharpGLTF.Schema2
                 () => _GetOcclusionTexture(false)?.Strength ?? MaterialOcclusionTextureInfo.StrengthDefault,
                 value => _GetOcclusionTexture(true).Strength = value);
 
-            var emissiveParam = new _MaterialParameter<Vector3>(
+            var emissiveFactorParam = new _MaterialParameter<Vector3>(
                 _MaterialParameterKey.RGB,
                 _emissiveFactorDefault,
                 () => this._emissiveFactor.AsValue(_emissiveFactorDefault),
@@ -125,7 +128,7 @@ namespace SharpGLTF.Schema2
 
             yield return new MaterialChannel(this, "Normal", _GetNormalTexture, normalParam);
             yield return new MaterialChannel(this, "Occlusion", _GetOcclusionTexture, occlusionParam);
-            yield return new MaterialChannel(this, "Emissive", _GetEmissiveTexture, emissiveParam);
+            yield return new MaterialChannel(this, "Emissive", _GetEmissiveTexture, emissiveFactorParam, MaterialEmissiveStrength.GetParameter(this));
         }
 
         private MaterialNormalTextureInfo _GetNormalTexture(bool create)
@@ -215,6 +218,9 @@ namespace SharpGLTF.Schema2
         }
     }
 
+    /// <summary>
+    /// <see cref="MaterialPBRSpecularGlossiness"/> has been deprecated by khronos in favour of <see cref="MaterialPBRMetallicRoughness"/> + <see cref="MaterialSpecular"/>
+    /// </summary>
     internal sealed partial class MaterialPBRSpecularGlossiness
     {
         #pragma warning disable CA1801 // Review unused parameters
@@ -610,6 +616,128 @@ namespace SharpGLTF.Schema2
 
             yield return new MaterialChannel(material, "VolumeThickness", _GetThicknessTexture, thicknessParam);
             yield return new MaterialChannel(material, "VolumeAttenuation", onCreate => null, attColorParam, attDistParam);
+        }
+    }
+
+    internal sealed partial class MaterialEmissiveStrength
+    {
+        #pragma warning disable CA1801 // Review unused parameters
+        internal MaterialEmissiveStrength(Material material) { }
+        #pragma warning restore CA1801 // Review unused parameters
+
+        protected override void OnValidateContent(ValidationContext validate)
+        {
+            base.OnValidateContent(validate);
+
+            if (_emissiveStrength < _emissiveStrengthMinimum) throw new ArgumentOutOfRangeException(nameof(EmissiveStrength)); 
+        }
+
+        public const float DefaultEmissiveStrength = (float)_emissiveStrengthDefault;
+
+        public float EmissiveStrength
+        {
+            get => (float)(this._emissiveStrength ?? _emissiveStrengthDefault);
+            set => this._emissiveStrength = ((double)value).AsNullable(_emissiveStrengthDefault);
+        }
+
+        public static _MaterialParameter<float> GetParameter(Material material)
+        {
+            float _getter() { return material.GetExtension<MaterialEmissiveStrength>()?.EmissiveStrength ?? 1; }
+
+            void _setter(float value)
+            {
+                value = Math.Max((float)_emissiveStrengthMinimum, value);
+
+                if (value == DefaultEmissiveStrength) { material.RemoveExtensions<MaterialEmissiveStrength>(); }
+                else { material.UseExtension<MaterialEmissiveStrength>().EmissiveStrength = value; }
+            }
+
+            return new _MaterialParameter<float>(_MaterialParameterKey.EmissiveStrength, DefaultEmissiveStrength, _getter, _setter);
+        }
+    }
+
+
+    internal sealed partial class MaterialIridescence
+    {
+        #pragma warning disable CA1801 // Review unused parameters
+        internal MaterialIridescence(Material material) { }
+        #pragma warning restore CA1801 // Review unused parameters
+
+        protected override IEnumerable<ExtraProperties> GetLogicalChildren()
+        {
+            return base.GetLogicalChildren().ConcatElements(_iridescenceTexture, _iridescenceThicknessTexture);
+        }
+
+        protected override void OnValidateContent(ValidationContext validate)
+        {
+            base.OnValidateContent(validate);            
+
+            if (_iridescenceFactor.HasValue)
+            {
+                Guard.MustBeBetweenOrEqualTo(_iridescenceFactor.Value, _iridescenceFactorMinimum, _iridescenceFactorMaximum, nameof(_iridescenceFactor));
+            }
+
+            if (_iridescenceIor.HasValue)
+            {
+                Guard.MustBeBetweenOrEqualTo(_iridescenceIor.Value, _iridescenceIorMinimum, double.MaxValue, nameof(_iridescenceIor));
+            }
+
+            var thickMin = _iridescenceThicknessMinimum ?? _iridescenceThicknessMinimumDefault;
+            var thickMax = _iridescenceThicknessMaximum ?? _iridescenceThicknessMaximumDefault;
+
+            Guard.MustBeBetweenOrEqualTo(thickMin, _iridescenceThicknessMinimumMinimum, thickMax, nameof(_iridescenceThicknessMinimum));
+            Guard.MustBeBetweenOrEqualTo(thickMax, thickMin, double.MaxValue, nameof(_iridescenceThicknessMaximum));
+
+            
+        }
+
+        private TextureInfo _GetIridescenceTexture(bool create)
+        {
+            if (create && _iridescenceTexture == null) _iridescenceTexture = new TextureInfo();
+            return _iridescenceTexture;
+        }
+
+        private TextureInfo _GetIridescenceThicknessTexture(bool create)
+        {
+            if (create && _iridescenceThicknessTexture == null) _iridescenceThicknessTexture = new TextureInfo();
+            return _iridescenceThicknessTexture;
+        }
+
+        public float IridescenceFactor
+        {
+            get => (float)_iridescenceFactor.AsValue(_iridescenceFactorDefault);
+            set => _iridescenceFactor = ((double)value).AsNullable(_iridescenceFactorDefault, _iridescenceFactorMinimum, _iridescenceFactorMaximum);
+        }
+
+        public float IridescenceIndexOfRefraction
+        {
+            get => (float)_iridescenceIor.AsValue(_iridescenceIorDefault);
+            set => _iridescenceIor = ((double)value).AsNullable(_iridescenceIorDefault, _iridescenceIorMinimum, double.MaxValue);
+        }
+
+        public float IridescenceThicknessMinimum
+        {
+            get => (float)_iridescenceThicknessMinimum.AsValue(_iridescenceThicknessMinimumDefault);
+            set => _iridescenceThicknessMinimum = ((double)value).AsNullable(_iridescenceThicknessMinimumDefault, _iridescenceThicknessMinimumMinimum, double.MaxValue);
+        }
+
+        public float IridescenceThicknessMaximum
+        {
+            get => (float)_iridescenceThicknessMaximum.AsValue(_iridescenceThicknessMaximumDefault);
+            set => _iridescenceThicknessMaximum = ((double)value).AsNullable(_iridescenceThicknessMaximumDefault, _iridescenceThicknessMaximumMinimum, double.MaxValue);
+        }
+
+        public IEnumerable<MaterialChannel> GetChannels(Material material)
+        {
+            var factor = new _MaterialParameter<float>(_MaterialParameterKey.IridescenceFactor, (float)_iridescenceFactorDefault, () => IridescenceFactor, v => IridescenceFactor = v);
+            var idxRef = new _MaterialParameter<float>(_MaterialParameterKey.IndexOfRefraction, (float)_iridescenceIorDefault, () => IridescenceIndexOfRefraction, v => IridescenceIndexOfRefraction = v);
+
+            yield return new MaterialChannel(material, "Iridescence", _GetIridescenceTexture, factor, idxRef);
+
+            var thkMin = new _MaterialParameter<float>(_MaterialParameterKey.Minimum, (float)_iridescenceThicknessMinimumDefault, () => IridescenceThicknessMinimum, v => IridescenceThicknessMinimum = v);
+            var thkMax = new _MaterialParameter<float>(_MaterialParameterKey.Maximum, (float)_iridescenceThicknessMaximumDefault, () => IridescenceThicknessMaximum, v => IridescenceThicknessMaximum = v);
+
+            yield return new MaterialChannel(material, "IridescenceThickness", _GetIridescenceThicknessTexture, thkMin, thkMax);
         }
     }
 }

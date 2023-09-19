@@ -83,10 +83,10 @@ namespace SharpGLTF.Schema2
             Guard.NotNull(node, nameof(node));
             Guard.NotNull(joints, nameof(joints));
 
-            foreach (var j in joints)
+            foreach (var (j, ibm) in joints)
             {
-                Guard.MustShareLogicalParent(node, j.Joint, nameof(joints));
-                Guard.IsTrue(Matrix4x4.Invert(j.InverseBindMatrix, out Matrix4x4 r), nameof(joints), "Invalid Matrix");
+                Guard.MustShareLogicalParent(node, j, nameof(joints));
+                Guard.IsTrue(Matrix4x4.Invert(ibm, out _), nameof(joints), "Invalid Matrix");
             }
 
             var skin = node.LogicalParent.CreateSkin();
@@ -119,10 +119,10 @@ namespace SharpGLTF.Schema2
             Guard.NotNull(joints, nameof(joints));
             Guard.MustShareLogicalParent(node, mesh, nameof(mesh));
 
-            foreach (var j in joints)
+            foreach (var (j, ibm) in joints)
             {
-                Guard.MustShareLogicalParent(node, j.Joint, nameof(joints));
-                Guard.IsTrue(Matrix4x4.Invert(j.InverseBindMatrix, out Matrix4x4 r), nameof(joints), "Invalid Matrix");
+                Guard.MustShareLogicalParent(node, j, nameof(joints));
+                Guard.IsTrue(Matrix4x4.Invert(ibm, out _), nameof(joints), "Invalid Matrix");
             }
 
             // TODO: the joints must be visible in the visual tree that contains node.
@@ -240,11 +240,11 @@ namespace SharpGLTF.Schema2
         /// <param name="animation">An <see cref="Animation"/> instance, or null.</param>
         /// <param name="time">The animation time.</param>
         /// <returns>A collection of triangles in world space.</returns>
-        public static IEnumerable<(VertexBuilder<TvG, TvM, VertexEmpty> A, VertexBuilder<TvG, TvM, VertexEmpty> B, VertexBuilder<TvG, TvM, VertexEmpty> C, Material Material)> EvaluateTriangles<TvG, TvM>(this Scene scene, Runtime.RuntimeOptions options = null, Animation animation = null, float time = 0)
+        public static IEnumerable<EvaluatedTriangle<TvG, TvM, VertexEmpty>> EvaluateTriangles<TvG, TvM>(this Scene scene, Runtime.RuntimeOptions options = null, Animation animation = null, float time = 0)
             where TvG : struct, IVertexGeometry
             where TvM : struct, IVertexMaterial
         {
-            if (scene == null) return Enumerable.Empty<(VertexBuilder<TvG, TvM, VertexEmpty>, VertexBuilder<TvG, TvM, VertexEmpty>, VertexBuilder<TvG, TvM, VertexEmpty>, Material)>();
+            if (scene == null) return Enumerable.Empty<EvaluatedTriangle<TvG, TvM, VertexEmpty>>();
 
             var instance = Runtime.SceneTemplate
                 .Create(scene, options)

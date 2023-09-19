@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using BYTES = System.ArraySegment<System.Byte>;
+using LAZYBYTES = System.Lazy<System.ArraySegment<System.Byte>>;
 
 namespace SharpGLTF.Memory
 {
@@ -83,6 +85,9 @@ namespace SharpGLTF.Memory
         /// <param name="mime64content">The Mime64 string source.</param>
         /// <param name="image">if decoding succeeds, it will contain the image file.</param>
         /// <returns>true if decoding succeeded.</returns>
+        /// <remarks>
+        /// The string must be haedered with a mime prefix like:     "data:image/png;base64,"
+        /// </remarks>
         public static bool TryParseMime64(string mime64content, out MemoryImage image)
         {
             if (mime64content == null) { image = default; return false; }
@@ -100,27 +105,20 @@ namespace SharpGLTF.Memory
             return true;
         }
 
-        public MemoryImage(BYTES image)
-        {
-            Guard.IsTrue(_IsImage(image), nameof(image), GuardError_MustBeValidImage);
-
-            _Image = image;
-            _SourcePathHint = null;
-        }
+        public MemoryImage(BYTES image) 
+            : this(_ToLazy(image), null) { }
 
         public MemoryImage(Byte[] image)
-        {
-            if (image != null) Guard.IsTrue(_IsImage(image), nameof(image), GuardError_MustBeValidImage);
+            : this(_ToLazy(image), null) { }
 
-            _Image = image == null ? default : new BYTES(image);
-            _SourcePathHint = null;
-        }
+        public MemoryImage(Func<BYTES> factory)
+            : this(new LAZYBYTES(factory), null) { }
 
         public MemoryImage(string filePath)
         {
             if (string.IsNullOrEmpty(filePath))
             {
-                _Image = default;
+                _LazyImage = _ToLazy(default(BYTES));
                 _SourcePathHint = null;
             }
             else
@@ -131,28 +129,49 @@ namespace SharpGLTF.Memory
 
                 Guard.IsTrue(_IsImage(data), nameof(filePath), GuardError_MustBeValidImage);
 
-                _Image = new BYTES(data);
+                _LazyImage = _ToLazy(data);
                 _SourcePathHint = filePath;
             }
-        }
-
-        internal MemoryImage(BYTES image, string filePath)
-            : this(image)
-        {
-            _SourcePathHint = filePath;
-        }
+        }        
 
         internal MemoryImage(Byte[] image, string filePath)
-            : this(image)
+            : this(_ToLazy(image), filePath) { }
+
+        internal MemoryImage(BYTES image, string filePath)
+            : this(_ToLazy(image), filePath) { }
+
+        internal MemoryImage(MemoryImage image, string filePath)
         {
+            _LazyImage = image._LazyImage;
+            _SourcePathHint = filePath ?? image._SourcePathHint;
+        }
+
+        internal MemoryImage(LAZYBYTES image, string filePath)
+        {
+            _LazyImage = image;
             _SourcePathHint = filePath;
+        }        
+
+        private static LAZYBYTES _ToLazy(Byte[] bytes)
+        {
+            return _ToLazy(new BYTES(bytes));
+        }
+        private static LAZYBYTES _ToLazy(BYTES bytes)
+        {
+            #if NETSTANDARD2_0
+            return new LAZYBYTES(()=> bytes);
+            #else
+            return new LAZYBYTES(bytes);
+            #endif
         }
 
         #endregion
 
         #region data
 
-        private readonly BYTES _Image;
+        private readonly LAZYBYTES _LazyImage;
+
+        private BYTES _Image => _LazyImage == null ? default : _LazyImage.Value;
 
         /// <remarks>
         /// This field must NOT be used for equality checks, it has the same face value as a code comment.
@@ -451,6 +470,7 @@ namespace SharpGLTF.Memory
         #endregion
     }
 
+    [System.Diagnostics.DebuggerDisplay("{PixelWidth}x{PixelHeight}x{PixelDepth}")]
     readonly struct Ktx2Header
     {
         // http://github.khronos.org/KTX-Specification/
@@ -468,13 +488,6 @@ namespace SharpGLTF.Memory
         public readonly UInt32 LevelCount;
         public readonly UInt32 SupercompressionScheme;
 
-        public static bool TryGetHeader(IReadOnlyList<Byte> data, out Ktx2Header header)
-        {
-            if (data.Count < 12) { header = default; return false; }
-            header = System.Runtime.InteropServices.MemoryMarshal.Cast<Byte, Ktx2Header>(data.ToArray())[0];
-            return true;
-        }
-
         public bool IsValidHeader
         {
             get
@@ -484,6 +497,16 @@ namespace SharpGLTF.Memory
                 return true;
             }
         }
+
+        public static unsafe bool TryGetHeader(IReadOnlyList<Byte> data, out Ktx2Header header)
+        {
+            if (!(data is Byte[] array)) array = data?.ToArray() ?? Array.Empty<Byte>();
+
+            if (array.Length < sizeof(Ktx2Header)) { header = default; return false; }
+
+            header = System.Runtime.InteropServices.MemoryMarshal.Cast<Byte, Ktx2Header>(array)[0];
+            return true;
+        }        
 
         public static void Verify(IReadOnlyList<Byte> data, string paramName)
         {

@@ -37,7 +37,9 @@ namespace SharpGLTF.Schema2
             RegisterExtension<Material, MaterialClearCoat>("KHR_materials_clearcoat");
             RegisterExtension<Material, MaterialTransmission>("KHR_materials_transmission");
             RegisterExtension<Material, MaterialVolume>("KHR_materials_volume");
+            RegisterExtension<Material, MaterialEmissiveStrength>("KHR_materials_emissive_strength");
             RegisterExtension<Material, MaterialPBRSpecularGlossiness>("KHR_materials_pbrSpecularGlossiness");
+            RegisterExtension<Material, MaterialIridescence>("KHR_materials_iridescence");
 
             RegisterExtension<TextureInfo, TextureTransform>("KHR_texture_transform");
 
@@ -49,6 +51,8 @@ namespace SharpGLTF.Schema2
             RegisterExtension<ModelRoot, AgiRootStkMetadata>("AGI_stk_metadata");
             RegisterExtension<Node, AgiNodeArticulations>("AGI_articulations");
             RegisterExtension<Node, AgiNodeStkMetadata>("AGI_stk_metadata");
+
+            RegisterExtension<MeshPrimitive, CesiumPrimitiveOutline>("CESIUM_primitive_outline");
         }
 
         #endregion

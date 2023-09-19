@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>    
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
     <AssemblyName>SharpGLTF.Core</AssemblyName>
     <RootNamespace>SharpGLTF</RootNamespace>
     <LangVersion>10.0</LangVersion>
@@ -10,26 +10,22 @@
     <PackageId>SharpGLTF.Core</PackageId>
     <Authors>Lixuinyu</Authors>
     <PackageProjectUrl>https://github.com/XYCaptain/SharpGLTF-TileExt</PackageProjectUrl>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <Import Project="..\PackageInfo.props" />
-  <Import Project="..\Version.props" />
-  <Import Project="..\Analyzers.props" />
-  <Import Project="..\Testing.props" />
-  <Import Project="..\SourceLink.props" />
 
   <PropertyGroup>
-    <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-  </PropertyGroup>
+    <!--
+    <DefineConstants>TRACE;SUPRESSTRYCATCH</DefineConstants>
+    -->
+  </PropertyGroup>  
   
   <ItemGroup>
     <Compile Include="..\Shared\Guard.cs" Link="Diagnostics\Guard.cs" />
     <Compile Include="..\Shared\_Extensions.cs" Link="_Extensions.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net5.0' ">
-    <PackageReference Include="System.Text.Json" Version="6.0.0" />
+  </ItemGroup>  
+  
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1'">    
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,9 +33,5 @@
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>  
 
 </Project>

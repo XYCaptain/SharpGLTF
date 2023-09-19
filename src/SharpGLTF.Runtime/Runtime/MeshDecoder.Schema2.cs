@@ -321,12 +321,26 @@ namespace SharpGLTF.Runtime
             return XY.Zero;
         }
 
+        public IReadOnlyList<XY> GetTextureCoordDeltas(int vertexIndex, int texCoordSet)
+        {
+            return MorphTargetsCount > 0
+                ? (IReadOnlyList<XY>)new _MorphTargetTexCoordSlice(_MorphTargets, vertexIndex, texCoordSet)
+                : Array.Empty<XY>();
+        }
+
         public XYZW GetColor(int vertexIndex, int set)
         {
             if (set == 0 && _Color0 != null) return _Color0[vertexIndex];
             if (set == 1 && _Color1 != null) return _Color1[vertexIndex];
 
             return XYZW.One;
+        }
+
+        public IReadOnlyList<XYZW> GetColorDeltas(int vertexIndex, int colorSet)
+        {
+            return MorphTargetsCount > 0
+                ? (IReadOnlyList<XYZW>)new _MorphTargetColorSlice(_MorphTargets, vertexIndex, colorSet)
+                : Array.Empty<XYZW>();
         }
 
         public Transforms.SparseWeight8 GetSkinWeights(int vertexIndex)
@@ -378,7 +392,6 @@ namespace SharpGLTF.Runtime
         #region properties
 
         public int VertexCount => _Positions?.Count ?? 0;
-
         public bool HasNormals => _Normals != null;
         public bool HasTangents => _Tangents != null;
 
@@ -394,6 +407,8 @@ namespace SharpGLTF.Runtime
 
         public XY GetTextureCoord(int vertexIndex, int set) { return _Owner.GetTextureCoord(vertexIndex, set); }
 
+        public XYZW GetColor(int vertexIndex, int set) { return _Owner.GetColor(vertexIndex, set); }
+
         #endregion
 
         #region Support methods for VertexNormalsFactory and VertexTangentsFactory
@@ -406,13 +421,11 @@ namespace SharpGLTF.Runtime
         XYZ VertexTangentsFactory.IMeshPrimitive.GetVertexPosition(int idx) { return GetPosition(idx); }
         XYZ VertexTangentsFactory.IMeshPrimitive.GetVertexNormal(int idx) { return GetNormal(idx); }
         XY VertexTangentsFactory.IMeshPrimitive.GetVertexTexCoord(int idx) { return GetTextureCoord(idx, 0); }
-
         void VertexNormalsFactory.IMeshPrimitive.SetVertexNormal(int idx, XYZ normal)
         {
             if (_Normals == null) _Normals = _GeneratedNormals = new XYZ[VertexCount];
             if (_GeneratedNormals != null) _GeneratedNormals[idx] = normal;
         }
-
         void VertexTangentsFactory.IMeshPrimitive.SetVertexTangent(int idx, XYZW tangent)
         {
             if (_Tangents == null) _Tangents = _GeneratedTangents = new XYZW[VertexCount];
@@ -439,17 +452,37 @@ namespace SharpGLTF.Runtime
 
             if (morphs.TryGetValue("POSITION", out SCHEMA2ACCESSOR pAccessor))
             {
-                _PositionsDeltas = pAccessor.AsVector3Array() as IReadOnlyList<Vector3>;
+                _PositionsDeltas = pAccessor.AsVector3Array() as IReadOnlyList<XYZ>;
             }
 
             if (morphs.TryGetValue("NORMAL", out SCHEMA2ACCESSOR nAccessor))
             {
-                _NormalsDeltas = nAccessor.AsVector3Array() as IReadOnlyList<Vector3>;
+                _NormalsDeltas = nAccessor.AsVector3Array() as IReadOnlyList<XYZ>;
             }
 
             if (morphs.TryGetValue("TANGENT", out SCHEMA2ACCESSOR tAccessor))
             {
-                _TangentsDeltas = tAccessor.AsVector3Array() as IReadOnlyList<Vector3>;
+                _TangentsDeltas = tAccessor.AsVector3Array() as IReadOnlyList<XYZ>;
+            }
+
+            if (morphs.TryGetValue("TEXCOORD_0", out SCHEMA2ACCESSOR uv0Accessor))
+            {
+                _TexCoordDeltas_0 = uv0Accessor.AsVector2Array() as IReadOnlyList<XY>;
+            }
+
+            if (morphs.TryGetValue("TEXCOORD_1", out SCHEMA2ACCESSOR uv1Accessor))
+            {
+                _TexCoordDeltas_1 = uv1Accessor.AsVector2Array() as IReadOnlyList<XY>;
+            }
+
+            if (morphs.TryGetValue("COLOR_0", out SCHEMA2ACCESSOR c0Accessor))
+            {
+                _ColorDeltas_0 = c0Accessor.AsVector4Array() as IReadOnlyList<XYZW>;
+            }
+
+            if (morphs.TryGetValue("COLOR_1", out SCHEMA2ACCESSOR c1Accessor))
+            {
+                _ColorDeltas_1 = c1Accessor.AsVector4Array() as IReadOnlyList<XYZW>;
             }
         }
 
@@ -463,6 +496,14 @@ namespace SharpGLTF.Runtime
         private IReadOnlyList<XYZ> _NormalsDeltas;
         private IReadOnlyList<XYZ> _TangentsDeltas;
 
+        // morph target deltas for uv sets
+        private IReadOnlyList<XY> _TexCoordDeltas_0;
+        private IReadOnlyList<XY> _TexCoordDeltas_1;
+
+        // morph target deltas for color sets
+        private IReadOnlyList<XYZW> _ColorDeltas_0;
+        private IReadOnlyList<XYZW> _ColorDeltas_1;
+
         private XYZ[] _GeneratedNormals;
         private XYZ[] _GeneratedTangents;
 
@@ -471,9 +512,29 @@ namespace SharpGLTF.Runtime
         #region properties
 
         public int VertexCount => _PositionsDeltas?.Count ?? 0;
-
         public bool HasNormals => _NormalsDeltas != null;
         public bool HasTangents => _TangentsDeltas != null;
+        public bool HasTexCoord(int set)
+        {
+            switch(set)
+            {
+                case 0: return _TexCoordDeltas_0 != null;
+                case 1: return _TexCoordDeltas_1 != null;
+            }
+
+            return false;
+        }
+
+        public bool HasColor(int set)
+        {
+            switch (set)
+            {
+                case 0: return _ColorDeltas_0 != null;
+                case 1: return _ColorDeltas_1 != null;
+            }
+
+            return false;
+        }
 
         #endregion
 
@@ -481,17 +542,41 @@ namespace SharpGLTF.Runtime
 
         public XYZ GetPositionBase(int vertexIndex) { return _Geometry.GetPosition(vertexIndex); }
 
-        public XYZ GetPositionDelta(int vertexIndex) { return _PositionsDeltas[vertexIndex]; }
+        public XYZ GetPositionDelta(int vertexIndex) { return _PositionsDeltas == null ? XYZ.Zero : _PositionsDeltas[vertexIndex]; }
 
         public XYZ GetNormalBase(int vertexIndex) { return _Geometry.GetNormal(vertexIndex); }
 
-        public XYZ GetNormalDelta(int vertexIndex) { return _NormalsDeltas[vertexIndex]; }
+        public XYZ GetNormalDelta(int vertexIndex) { return _NormalsDeltas == null ? XYZ.Zero : _NormalsDeltas[vertexIndex]; }
 
         public XYZW GetTangentBase(int vertexIndex) { return _Geometry.GetTangent(vertexIndex); }
 
-        public XYZ GetTangentDelta(int vertexIndex) { return _TangentsDeltas[vertexIndex]; }
+        public XYZ GetTangentDelta(int vertexIndex) { return _TangentsDeltas == null ? XYZ.Zero : _TangentsDeltas[vertexIndex]; }
 
         public XY GetTextureCoord(int vertexIndex, int set) { return _Geometry.GetTextureCoord(vertexIndex, set); }
+
+        public XY GetTextureCoordDelta(int vertexIndex, int set)
+        {
+            switch(set)
+            {
+                case 0: return _TexCoordDeltas_0 == null ? XY.Zero : _TexCoordDeltas_0[vertexIndex];
+                case 1: return _TexCoordDeltas_1 == null ? XY.Zero : _TexCoordDeltas_1[vertexIndex];
+            }            
+
+            return XY.Zero;
+        }
+
+        public XYZW GetColor(int vertexIndex, int set) { return _Geometry.GetColor(vertexIndex, set); }
+
+        public XYZW GetColorDelta(int vertexIndex, int set)
+        {
+            switch(set)
+            {
+                case 0: return _ColorDeltas_0 == null ? XYZW.Zero : _ColorDeltas_0[vertexIndex];
+                case 1: return _ColorDeltas_1 == null ? XYZW.Zero : _ColorDeltas_1[vertexIndex];
+            }
+
+            return XYZW.Zero;
+        }
 
         #endregion
 
@@ -581,6 +666,46 @@ namespace SharpGLTF.Runtime
         public XYZ this[int index] => _Geometries[index].GetTangentDelta(_VertexIndex);
         public int Count => _Geometries.Count;
         public IEnumerator<XYZ> GetEnumerator() { throw new NotImplementedException(); }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { throw new NotImplementedException(); }
+    }
+
+    [System.Diagnostics.DebuggerDisplay("Vertex {_VertexIndex} Tangents deltas")]
+    readonly struct _MorphTargetTexCoordSlice : IReadOnlyList<XY>
+    {
+        public _MorphTargetTexCoordSlice(IReadOnlyList<_MorphTargetDecoder> ggg, int idx, int set)
+        {
+            _Geometries = ggg;
+            _VertexIndex = idx;
+            _TexCoordSet = set;
+        }
+
+        private readonly IReadOnlyList<_MorphTargetDecoder> _Geometries;
+        private readonly int _VertexIndex;
+        private readonly int _TexCoordSet;
+
+        public XY this[int index] => _Geometries[index].GetTextureCoordDelta(_VertexIndex, _TexCoordSet);
+        public int Count => _Geometries.Count;
+        public IEnumerator<XY> GetEnumerator() { throw new NotImplementedException(); }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { throw new NotImplementedException(); }
+    }
+
+    [System.Diagnostics.DebuggerDisplay("Vertex {_VertexIndex} Tangents deltas")]
+    readonly struct _MorphTargetColorSlice : IReadOnlyList<XYZW>
+    {
+        public _MorphTargetColorSlice(IReadOnlyList<_MorphTargetDecoder> ggg, int idx, int set)
+        {
+            _Geometries = ggg;
+            _VertexIndex = idx;
+            _ColorSet = set;
+        }
+
+        private readonly IReadOnlyList<_MorphTargetDecoder> _Geometries;
+        private readonly int _VertexIndex;
+        private readonly int _ColorSet;
+
+        public XYZW this[int index] => _Geometries[index].GetColorDelta(_VertexIndex, _ColorSet);
+        public int Count => _Geometries.Count;
+        public IEnumerator<XYZW> GetEnumerator() { throw new NotImplementedException(); }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { throw new NotImplementedException(); }
     }
 }

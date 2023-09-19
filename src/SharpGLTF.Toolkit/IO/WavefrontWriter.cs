@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 
+using SharpGLTF.Memory;
 using SharpGLTF.Schema2;
 
 using static System.FormattableString;
@@ -55,14 +57,13 @@ namespace SharpGLTF.IO
         {
             Guard.NotNullOrEmpty(filePath, nameof(filePath));
 
-            var files = GetFiles(System.IO.Path.GetFileNameWithoutExtension(filePath));
-
             var dir = System.IO.Path.GetDirectoryName(filePath);
 
-            foreach (var f in files)
+            foreach (var fileNameAndGenerator in _GetFileGenerators(System.IO.Path.GetFileNameWithoutExtension(filePath)))
             {
-                var fpath = System.IO.Path.Combine(dir, f.Key);
-                System.IO.File.WriteAllBytes(fpath, f.Value.ToArray());
+                var fpath = System.IO.Path.Combine(dir, fileNameAndGenerator.Key);
+                using var fs = File.OpenWrite(fpath);
+                fileNameAndGenerator.Value(fs);
             }
         }
 
@@ -81,17 +82,33 @@ namespace SharpGLTF.IO
             Guard.IsFalse(baseName.Any(c => char.IsWhiteSpace(c)), nameof(baseName), "Whitespace characters not allowed in filename");
 
             var files = new Dictionary<String, BYTES>();
+            foreach (var fileNameAndGenerator in _GetFileGenerators(baseName)) 
+            {
+                using var mem = new MemoryStream();
+                fileNameAndGenerator.Value(mem);
 
-            var materials = _WriteMaterials(files, baseName, _Mesh.Primitives.Select(item => item.Material));
+                mem.TryGetBuffer(out var bytes);
 
-            var geocontent = _GetGeometryContent(materials, baseName + ".mtl");
-
-            _WriteTextContent(files, baseName + ".obj", geocontent);
+                files[fileNameAndGenerator.Key] = bytes;
+            }
 
             return files;
         }
 
-        private static IReadOnlyDictionary<Material, string> _WriteMaterials(IDictionary<String, BYTES> files, string baseName, IEnumerable<Material> materials)
+        private IReadOnlyDictionary<String, Action<Stream>> _GetFileGenerators(string baseName) 
+        {
+            Guard.IsFalse(baseName.Any(c => char.IsWhiteSpace(c)), nameof(baseName), "Whitespace characters not allowed in filename");
+
+            var fileGenerators = new Dictionary<String, Action<Stream>>();
+
+            var materials = _GetMaterialFileGenerator(fileGenerators, baseName, _Mesh.Primitives.Select(item => item.Material));
+
+            fileGenerators[baseName + ".obj"] = fs => _GetGeometryContent(new StreamWriter(fs), materials, baseName + ".mtl");
+
+            return fileGenerators;
+        }
+
+        private static IReadOnlyDictionary<Material, string> _GetMaterialFileGenerator(IDictionary<String, Action<Stream>> fileGenerators, string baseName, IEnumerable<Material> materials)
         {
             // write all image files
             var images = materials
@@ -101,73 +118,81 @@ namespace SharpGLTF.IO
 
             bool firstImg = true;
 
+            var imageNameByImage = new Dictionary<MemoryImage, string>();
             foreach (var img in images)
             {
-                var imgName = firstImg ? baseName : $"{baseName}_{files.Count}.{img.FileExtension}";
-                files[imgName] = new BYTES(img.Content.ToArray());
+                var imgName = firstImg
+                    ? $"{baseName}.{img.FileExtension}"
+                    : $"{baseName}_{fileGenerators.Count}.{img.FileExtension}";
+
+                fileGenerators[imgName] = fs => {
+                    var bytes = img.Content.ToArray();
+                    fs.Write(bytes, 0, bytes.Length);
+                };
                 firstImg = false;
+
+                imageNameByImage[img] = imgName;
             }
 
             // write materials
 
             var mmap = new Dictionary<Material, string>();
-
-            var sb = new StringBuilder();
-
-            foreach (var m in materials)
+            foreach (var m in materials) 
             {
                 mmap[m] = $"Material_{mmap.Count}";
-
-                sb.AppendLine($"newmtl {mmap[m]}");
-                sb.AppendLine("illum 2");
-                sb.AppendLine(Invariant($"Ka {m.DiffuseColor.X} {m.DiffuseColor.Y} {m.DiffuseColor.Z}"));
-                sb.AppendLine(Invariant($"Kd {m.DiffuseColor.X} {m.DiffuseColor.Y} {m.DiffuseColor.Z}"));
-                sb.AppendLine(Invariant($"Ks {m.SpecularColor.X} {m.SpecularColor.Y} {m.SpecularColor.Z}"));
-
-                if (m.DiffuseTexture.IsValid)
-                {
-                    var imgName = files.FirstOrDefault(kvp => new Memory.MemoryImage(kvp.Value) == m.DiffuseTexture ).Key;
-                    sb.AppendLine($"map_Kd {imgName}");
-                }
-
-                sb.AppendLine();
             }
 
             // write material library
-            _WriteTextContent(files, baseName + ".mtl", sb);
+            fileGenerators[baseName + ".mtl"] = fs =>
+            {
+                var sw = new StreamWriter(fs);
+                foreach (var m in materials) 
+                {
+                    sw.WriteLine($"newmtl {mmap[m]}");
+                    sw.WriteLine("illum 2");
+                    sw.WriteLine(Invariant($"Ka {m.DiffuseColor.X} {m.DiffuseColor.Y} {m.DiffuseColor.Z}"));
+                    sw.WriteLine(Invariant($"Kd {m.DiffuseColor.X} {m.DiffuseColor.Y} {m.DiffuseColor.Z}"));
+                    sw.WriteLine(Invariant($"Ks {m.SpecularColor.X} {m.SpecularColor.Y} {m.SpecularColor.Z}"));
+
+                    if (m.DiffuseTexture.IsValid) {
+                        var imgName = imageNameByImage[m.DiffuseTexture];
+                        sw.WriteLine($"map_Kd {imgName}");
+                    }
+
+                    sw.WriteLine();
+                }
+            };
 
             return mmap;
         }
 
-        private StringBuilder _GetGeometryContent(IReadOnlyDictionary<Material, string> materials, string mtlLib)
+        private void _GetGeometryContent(StreamWriter sw, IReadOnlyDictionary<Material, string> materials, string mtlLib)
         {
-            var sb = new StringBuilder();
+            sw.WriteLine($"mtllib {mtlLib}");
 
-            sb.AppendLine($"mtllib {mtlLib}");
-
-            sb.AppendLine();
+            sw.WriteLine();
 
             foreach (var p in _Mesh.Primitives)
             {
                 foreach (var v in p.Vertices)
                 {
                     var pos = v.Position;
-                    sb.AppendLine(Invariant($"v {pos.X} {pos.Y} {pos.Z}"));
+                    sw.WriteLine(Invariant($"v {pos.X} {pos.Y} {pos.Z}"));
                 }
             }
 
-            sb.AppendLine();
+            sw.WriteLine();
 
             foreach (var p in _Mesh.Primitives)
             {
                 foreach (var v in p.Vertices)
                 {
                     var nrm = v.Geometry.Normal;
-                    sb.AppendLine(Invariant($"vn {nrm.X} {nrm.Y} {nrm.Z}"));
+                    sw.WriteLine(Invariant($"vn {nrm.X} {nrm.Y} {nrm.Z}"));
                 }
             }
 
-            sb.AppendLine();
+            sw.WriteLine();
 
             foreach (var p in _Mesh.Primitives)
             {
@@ -176,13 +201,13 @@ namespace SharpGLTF.IO
                     var uv = v.Material.TexCoord;
                     uv.Y = 1 - uv.Y;
 
-                    sb.AppendLine(Invariant($"vt {uv.X} {uv.Y}"));
+                    sw.WriteLine(Invariant($"vt {uv.X} {uv.Y}"));
                 }
             }
 
-            sb.AppendLine();
+            sw.WriteLine();
 
-            sb.AppendLine("g default");
+            sw.WriteLine("g default");
 
             var baseVertexIndex = 1;
 
@@ -190,7 +215,7 @@ namespace SharpGLTF.IO
             {
                 var mtl = materials[p.Material];
 
-                sb.AppendLine($"usemtl {mtl}");
+                sw.WriteLine($"usemtl {mtl}");
 
                 foreach (var t in p.Triangles)
                 {
@@ -198,27 +223,10 @@ namespace SharpGLTF.IO
                     var b = t.B + baseVertexIndex;
                     var c = t.C + baseVertexIndex;
 
-                    sb.AppendLine(Invariant($"f {a}/{a}/{a} {b}/{b}/{b} {c}/{c}/{c}"));
+                    sw.WriteLine(Invariant($"f {a}/{a}/{a} {b}/{b}/{b} {c}/{c}/{c}"));
                 }
 
                 baseVertexIndex += p.Vertices.Count;
-            }
-
-            return sb;
-        }
-
-        private static void _WriteTextContent(IDictionary<string, BYTES> files, string fileName, StringBuilder sb)
-        {
-            using (var mem = new System.IO.MemoryStream())
-            {
-                using (var tex = new System.IO.StreamWriter(mem))
-                {
-                    tex.Write(sb.ToString());
-                }
-
-                mem.TryGetBuffer(out BYTES content);
-
-                files[fileName] = content;
             }
         }
 
@@ -228,7 +236,13 @@ namespace SharpGLTF.IO
 
         public void AddModel(ModelRoot model)
         {
-            foreach (var triangle in Toolkit.EvaluateTriangles<VGEOMETRY, VMATERIAL>(model.DefaultScene))
+            // retrieve a "snapshot" of all the triangles of the scene
+            var triangles = Toolkit.EvaluateTriangles<VGEOMETRY, VMATERIAL>(model.DefaultScene);
+
+            // bake the material transforms into the UV coordinates
+            triangles = EvaluatedTriangle<VGEOMETRY, VMATERIAL, VEMPTY>.TransformTextureCoordsByMaterial(triangles);
+
+            foreach (var triangle in triangles)
             {
                 var dstMaterial = GetMaterialFromTriangle(triangle.Material);
                 this.AddTriangle(dstMaterial, triangle.A, triangle.B, triangle.C);
@@ -239,9 +253,16 @@ namespace SharpGLTF.IO
         {
             var options = new Runtime.RuntimeOptions();
             options.IsolateMemory = false;
+            // options.BakeTextureTransforms = true;
             options.GpuMeshInstancing = Runtime.MeshInstancing.SingleMesh;
 
-            foreach (var triangle in Toolkit.EvaluateTriangles<VGEOMETRY, VMATERIAL>(model.DefaultScene, options, animation, time))
+            // retrieve a "snapshot" of all the triangles of the scene
+            var triangles = Toolkit.EvaluateTriangles<VGEOMETRY, VMATERIAL>(model.DefaultScene, options, animation, time);
+
+            // bake the material transforms into the UV coordinates
+            triangles = EvaluatedTriangle<VGEOMETRY, VMATERIAL, VEMPTY>.TransformTextureCoordsByMaterial(triangles);
+
+            foreach (var triangle in triangles)
             {
                 var dstMaterial = GetMaterialFromTriangle(triangle.Material);
                 this.AddTriangle(dstMaterial, triangle.A, triangle.B, triangle.C);
@@ -271,11 +292,26 @@ namespace SharpGLTF.IO
         #region nested types
 
         [System.Diagnostics.DebuggerDisplay("{DiffuseColor} {DiffuseTexture.ToDebuggerDisplay()}")]
-        public struct Material
+        public struct Material : IEquatable<Material>
         {
             public Vector3 DiffuseColor;
             public Vector3 SpecularColor;
-            public Memory.MemoryImage DiffuseTexture;
+            public Memory.MemoryImage DiffuseTexture;            
+
+            public readonly override int GetHashCode()
+            {
+                return DiffuseColor.GetHashCode() ^ SpecularColor.GetHashCode() ^ DiffuseTexture.GetHashCode();
+            }
+
+            public readonly override bool Equals(object obj) { return obj is Material other && this.Equals(other); }
+
+            public readonly bool Equals(Material other)
+            {
+                if (this.DiffuseColor != other.DiffuseColor) return false;
+                if (this.SpecularColor != other.SpecularColor) return false;
+                if (this.DiffuseTexture != other.DiffuseTexture) return false;
+                return true;
+            }
         }
 
         #endregion

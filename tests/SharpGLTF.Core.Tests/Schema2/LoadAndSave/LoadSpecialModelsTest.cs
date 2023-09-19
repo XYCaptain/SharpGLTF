@@ -12,6 +12,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
     /// Test cases for models found in <see href="https://github.com/KhronosGroup/glTF-Blender-Exporter"/>
     /// </summary>
     [TestFixture]
+    [AttachmentPathFormat("*/TestResults/LoadAndSave/?", true)]
     [Category("Model Load and Save")]
     public class LoadSpecialModelsTest
     {
@@ -28,8 +29,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void LoadEscapedUriModel()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, "Assets\\white space.gltf");
 
             var model = ModelRoot.Load(path);
@@ -40,8 +39,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
 
         public void LoadWithCustomImageLoader()
         {
-            TestContext.CurrentContext.AttachShowDirLink();            
-
             // load Polly model
             var model = ModelRoot.Load(TestFiles.GetPollyFileModelPath());
         }
@@ -49,8 +46,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test(Description = "Example of traversing the visual tree all the way to individual vertices and indices")]
         public void LoadPollyModel()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             // load Polly model
             var model = ModelRoot.Load(TestFiles.GetPollyFileModelPath(), Validation.ValidationMode.TryFix);
 
@@ -116,8 +111,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void LoadUniVRM()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = TestFiles.GetUniVRMModelPath();
             
             var model = ModelRoot.Load(path);
@@ -131,8 +124,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         // [Test]
         public void LoadShrekshaoModel()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = "Assets\\SpecialCases\\shrekshao.glb";
 
             var model = ModelRoot.Load(path);
@@ -143,9 +134,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
         public void LoadMouseModel()
         {
             // this model has several nodes with curve animations containing a single animation key,
-            // which is causing some problems to the interpolator.
-
-            TestContext.CurrentContext.AttachShowDirLink();
+            // which is causing some problems to the interpolator.            
             
             var path = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, "Assets\\SpecialCases\\mouse.glb");
 
@@ -172,9 +161,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
         public void LoadSketchfabModels(string path)
         {
             // this model has several nodes with curve animations containing a single animation key,
-            // which is causing some problems to the interpolator.
-
-            TestContext.CurrentContext.AttachShowDirLink();
+            // which is causing some problems to the interpolator.            
 
             path = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, $"Assets\\SpecialCases\\{path}");
 
@@ -189,15 +176,13 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [TestCase("NormalTangentMirrorTest.glb")]
         public void LoadGeneratedTangetsTest(string fileName)
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = TestFiles.GetSampleModelsPaths().FirstOrDefault(item => item.EndsWith(fileName));
 
             var model = ModelRoot.Load(path);
 
             var mesh = model.DefaultScene
                 .EvaluateTriangles<Geometry.VertexTypes.VertexPositionNormalTangent, Geometry.VertexTypes.VertexTexture1>()
-                .ToMeshBuilder( m => m.ToMaterialBuilder() );            
+                .ToMeshBuilder();            
 
             var editableScene = new Scenes.SceneBuilder();
             editableScene.AddRigidMesh(mesh, Matrix4x4.Identity);

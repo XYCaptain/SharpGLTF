@@ -120,7 +120,24 @@ namespace SharpGLTF.Schema2
 
             _FindCommonAncestor(joints.Select(item => item.Joint));
 
-            foreach (var j in joints) { Guard.IsTrue(j.InverseBindMatrix._IsFinite(), nameof(joints)); }
+            // Acording to gltf schema
+            // "The fourth row of each matrix MUST be set to [0.0, 0.0, 0.0, 1.0]."
+            // https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#skins-overview
+            for (int i = 0; i < joints.Length; ++i)
+            {
+                var ibm = joints[i].InverseBindMatrix;
+
+                Transforms.Matrix4x4Factory.GuardMatrix($"{nameof(joints)}[{i}]", ibm, Transforms.Matrix4x4Factory.MatrixCheck.InverseBindMatrix, 0.01f);                
+
+                // fourth column (row in schema) is within tolerance
+                // so we can enforce exact values,
+                ibm.M14 = 0;
+                ibm.M24 = 0;
+                ibm.M34 = 0;
+                ibm.M44 = 1;
+
+                joints[i] = (joints[i].Joint, ibm);
+            }
 
             // inverse bind matrices accessor
 

@@ -63,12 +63,12 @@ namespace SharpGLTF
             return v.X._IsFinite() && v.Y._IsFinite() && v.Z._IsFinite();
         }
 
-        internal static bool _IsFinite(this Vector4 v)
+        internal static bool _IsFinite(this in Vector4 v)
         {
             return v.X._IsFinite() && v.Y._IsFinite() && v.Z._IsFinite() && v.W._IsFinite();
         }
 
-        internal static bool _IsFinite(this Matrix4x4 v)
+        internal static bool _IsFinite(this in Matrix4x4 v)
         {
             if (!(v.M11._IsFinite() && v.M12._IsFinite() && v.M13._IsFinite() && v.M14._IsFinite())) return false;
             if (!(v.M21._IsFinite() && v.M22._IsFinite() && v.M23._IsFinite() && v.M24._IsFinite())) return false;
@@ -179,54 +179,14 @@ namespace SharpGLTF
         {
             if (!Matrix4x4.Invert(src, out Matrix4x4 dst)) Guard.IsTrue(false, nameof(src), "Matrix cannot be inverted.");
 
+            if (src.M44 == 1) dst.M44 = 1; // fix precission loss;
+
             return dst;
-        }
+        }        
 
-        [Flags]
-        internal enum MatrixCheck
+        internal static bool IsValid(this in Matrix4x4 matrix, Transforms.Matrix4x4Factory.MatrixCheck check, float tolerance = 0)
         {
-            Finite = 0,
-            NonZero = 1,
-            Identity = 2,
-            IdentityColumn4 = 4,
-            Invertible = 8,
-            Decomposable = 16,
-            PositiveDeterminant = 32,
-
-            LocalTransform = Invertible | Decomposable | IdentityColumn4,
-
-            /// <remarks>
-            /// A world matrix can be built from a concatenation of local tranforms.<br/>
-            /// Which means it can be a squeezed matrix, and not decomposable.
-            /// </remarks>
-            WorldTransform = Invertible | IdentityColumn4,
-
-            /// <summary>
-            /// Since an inverse bind matrix is built from the inverse of a WorldMatrix,
-            /// the same rules apply.
-            /// </summary>
-            InverseBindMatrix = Invertible | IdentityColumn4
-        }
-
-        internal static bool IsValid(this in Matrix4x4 matrix, MatrixCheck check)
-        {
-            if (!matrix._IsFinite()) return false;
-
-            if (check.HasFlag(MatrixCheck.NonZero) && matrix == default) return false;
-            if (check.HasFlag(MatrixCheck.Identity) && matrix != Matrix4x4.Identity) return false;
-            if (check.HasFlag(MatrixCheck.IdentityColumn4))
-            {
-                if (matrix.M14 != 0) return false;
-                if (matrix.M24 != 0) return false;
-                if (matrix.M34 != 0) return false;
-                if (matrix.M44 != 1) return false;
-            }
-
-            if (check.HasFlag(MatrixCheck.Invertible) && !Matrix4x4.Invert(matrix, out _)) return false;
-            if (check.HasFlag(MatrixCheck.Decomposable) && !Matrix4x4.Decompose(matrix, out _, out _, out _)) return false;
-            if (check.HasFlag(MatrixCheck.PositiveDeterminant) && matrix.GetDeterminant() <= 0) return false;
-
-            return true;
+            return Transforms.Matrix4x4Factory.IsValid(matrix, check, tolerance);
         }
 
         #endregion

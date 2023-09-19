@@ -23,9 +23,13 @@ namespace SharpGLTF.Schema2
         SatelliteFile,
 
         /// <summary>
-        /// Resources will be embedded into the JSON encoded in MIME64.
+        /// Resources will be embedded into the JSON encoded in Base64.
         /// </summary>
-        Embedded,
+        /// <remarks>
+        /// When writing to GLB this does not have any effect.<br/>
+        /// This flag only has effect with images, not with binary blobs.
+        /// </remarks>
+        EmbeddedAsBase64,
 
         /// <summary>
         /// Resources will be stored as internal binary buffers. Valid only for <see cref="Image"/>
@@ -168,16 +172,22 @@ namespace SharpGLTF.Schema2
         /// <param name="settings">Optional settings.</param>
         public void SaveGLB(string filePath, WriteSettings settings = null)
         {
+            Guard.NotNull(filePath, nameof(filePath));
+
             if (!(settings is WriteContext context))
             {
+                var finfo = new System.IO.FileInfo(filePath);
+
                 context = WriteContext
-                    .CreateFromFile(filePath)
+                    .CreateFromDirectory(finfo.Directory)
                     .WithSettingsFrom(settings);
+
+                filePath = finfo.Name;
             }
 
-            context.WithBinarySettings();
-
             var name = Path.GetFileNameWithoutExtension(filePath);
+
+            context.WithBinarySettings();
 
             context.WriteBinarySchema2(name, this);
         }
@@ -192,17 +202,23 @@ namespace SharpGLTF.Schema2
         /// </remarks>
         public void SaveGLTF(string filePath, WriteSettings settings = null)
         {
+            Guard.NotNull(filePath, nameof(filePath));
+
             if (!(settings is WriteContext context))
             {
-                context = WriteContext
-                    .CreateFromFile(filePath)
-                    .WithSettingsFrom(settings);
-            }
+                var finfo = new System.IO.FileInfo(filePath);
 
-            context.WithTextSettings();
+                context = WriteContext
+                    .CreateFromDirectory(finfo.Directory)
+                    .WithSettingsFrom(settings);
+
+                filePath = finfo.Name;
+            }
 
             var name = Path.GetFileNameWithoutExtension(filePath);
 
+            context.WithTextSettings();
+            
             context.WriteTextSchema2(name, this);
         }
 
@@ -342,9 +358,20 @@ namespace SharpGLTF.Schema2
             }
         }
 
-        internal void _PrepareImagesForWriting(WriteContext context, string baseName, ResourceWriteMode rmode)
+        internal void _PrepareImagesForWriting(WriteContext context, string baseName, bool isBinary, ResourceWriteMode rmode)
         {
             if (context.ImageWriting != ResourceWriteMode.Default) rmode = context.ImageWriting;
+
+            if (rmode == ResourceWriteMode.Default) throw new InvalidOperationException(nameof(ResourceWriteMode) + " is not set");
+
+            if (isBinary)
+            {
+                if (rmode == ResourceWriteMode.EmbeddedAsBase64) throw new InvalidOperationException(nameof(ResourceWriteMode.EmbeddedAsBase64) + " not supported when writing binary GLB.");
+            }
+            else
+            {
+                if (rmode == ResourceWriteMode.BufferView) throw new InvalidOperationException(nameof(ResourceWriteMode.BufferView) + " not supported when writing text glTF.");
+            }
 
             // setup all images to be written to the appropiate location.
             for (int i = 0; i < this._images.Count; ++i)

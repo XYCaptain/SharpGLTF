@@ -11,6 +11,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
     /// Test cases for models found in <see href="https://github.com/KhronosGroup/glTF-Sample-Models"/> and more....
     /// </summary>
     [TestFixture]
+    [AttachmentPathFormat("*/TestResults/LoadAndSave/?", true)]
     [Category("Model Load and Save")]
     public class LoadSampleTests
     {
@@ -53,13 +54,16 @@ namespace SharpGLTF.Schema2.LoadAndSave
 
             var perf_clone = perf.ElapsedMilliseconds;
 
-            var unsupportedExtensions = new[] { "MSFT_lod", "EXT_lights_image_based" };
-
-            // check extensions used
-            if (unsupportedExtensions.All(uex => !model.ExtensionsUsed.Contains(uex)))
+            if (!f.Contains("Iridescence")) // the iridescence sample models declares using IOR but it's not actually used
             {
-                var detectedExtensions = model.GatherUsedExtensions().ToArray();
-                CollectionAssert.AreEquivalent(model.ExtensionsUsed, detectedExtensions);
+                var unsupportedExtensions = new[] { "MSFT_lod", "EXT_lights_image_based" };
+
+                // check extensions used
+                if (unsupportedExtensions.All(uex => !model.ExtensionsUsed.Contains(uex)))
+                {
+                    var detectedExtensions = model.GatherUsedExtensions().ToArray();
+                    CollectionAssert.AreEquivalent(model.ExtensionsUsed, detectedExtensions);
+                }
             }
 
             // Save models
@@ -98,8 +102,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
         // [TestCase("\\glTF-Quantized\\")] // removed from tests
         // [TestCase("\\glTF-pbrSpecularGlossiness\\")] // removed from tests
         public void LoadModelsFromKhronosSamples(string section)
-        {
-            TestContext.CurrentContext.AttachShowDirLink();
+        {            
             TestContext.CurrentContext.AttachGltfValidatorLinks();
 
             foreach (var f in TestFiles.GetSampleModelsPaths())
@@ -112,8 +115,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
 
         [Test]
         public void LoadModelsFromBabylonJs()
-        {
-            TestContext.CurrentContext.AttachShowDirLink();
+        {         
             TestContext.CurrentContext.AttachGltfValidatorLinks();
 
             foreach (var f in TestFiles.GetBabylonJSModelsPaths())
@@ -126,8 +128,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [TestCase("GrassFieldInstanced.glb")]
         [TestCase("InstanceTest.glb")]
         public void LoadModelsWithGpuMeshInstancingExtension(string fileFilter)
-        {
-            TestContext.CurrentContext.AttachShowDirLink();
+        {            
             TestContext.CurrentContext.AttachGltfValidatorLinks();
 
             var f = TestFiles.GetMeshIntancingModelPaths().FirstOrDefault(item => item.Contains(fileFilter));
@@ -163,6 +164,7 @@ namespace SharpGLTF.Schema2.LoadAndSave
             roundtripInstanced.AttachToCurrentTest($"{ff}.roundtrip.instancing.glb");            
         }
 
+        [TestCase("IridescenceMetallicSpheres.gltf")]
         [TestCase("SpecGlossVsMetalRough.gltf")]
         [TestCase(@"TextureTransformTest.gltf")]
         [TestCase(@"UnlitTest\glTF-Binary\UnlitTest.glb")]                                                
@@ -171,28 +173,16 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [TestCase(@"glTF-Quantized\AnimatedMorphCube.gltf")]
         [TestCase(@"glTF-Quantized\Duck.gltf")]
         [TestCase(@"glTF-Quantized\Lantern.gltf")]
-        [TestCase(@"MosquitoInAmber.glb")]
+        [TestCase(@"MosquitoInAmber.glb")]        
         public void LoadModelsWithExtensions(string filePath)
-        {
-            TestContext.CurrentContext.AttachShowDirLink();
+        {            
             TestContext.CurrentContext.AttachGltfValidatorLinks();
 
             filePath = TestFiles
                 .GetSampleModelsPaths()
                 .FirstOrDefault(item => item.EndsWith(filePath));
 
-            var model = ModelRoot.Load(filePath);
-            Assert.NotNull(model);
-
-            // do a model clone and compare it
-            _AssertAreEqual(model, model.DeepClone());
-
-            // evaluate and save all the triangles to a Wavefront Object
-
-            filePath = System.IO.Path.GetFileNameWithoutExtension(filePath);
-            model.AttachToCurrentTest(filePath + "_wf.obj");
-            model.AttachToCurrentTest(filePath + ".glb");
-            model.AttachToCurrentTest(filePath + ".gltf");
+            _LoadModel(filePath);
         }
 
         [Test]
@@ -252,8 +242,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void LoadModelWithMorphTargets()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = TestFiles
                 .GetSampleModelsPaths()
                 .FirstOrDefault(item => item.Contains("MorphPrimitivesTest.glb"));
@@ -280,8 +268,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [TestCase("Fox.glb")]
         public void LoadModelsWithAnimations(string path)
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             path = TestFiles
                 .GetSampleModelsPaths()
                 .FirstOrDefault(item => item.Contains(path));
@@ -312,8 +298,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void LoadAnimatedMorphCube()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = TestFiles
                 .GetSampleModelsPaths()
                 .FirstOrDefault(item => item.Contains("AnimatedMorphCube.glb"));
@@ -385,8 +369,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void LoadMultiUVTexture()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
-
             var path = TestFiles
                 .GetSampleModelsPaths()
                 .FirstOrDefault(item => item.Contains("TextureTransformMultiTest.glb"));
@@ -406,7 +388,6 @@ namespace SharpGLTF.Schema2.LoadAndSave
         [Test]
         public void FindDependencyFiles()
         {
-            TestContext.CurrentContext.AttachShowDirLink();
             TestContext.CurrentContext.AttachGltfValidatorLinks();
 
             foreach (var f in TestFiles.GetBabylonJSModelsPaths())

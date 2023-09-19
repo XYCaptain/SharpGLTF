@@ -70,6 +70,8 @@ namespace SharpGLTF.Transforms
 
     public interface IGeometryInstancing
     {
+        int InstancesCount { get; }
+
         /// <summary>
         /// Gets the list of instances produced by this transform.
         /// </summary>
@@ -469,6 +471,8 @@ namespace SharpGLTF.Transforms
         {
             if (!Matrix4x4Double.Invert(jointWorldTransform, out Matrix4x4Double invJoint)) Guard.IsTrue(false, nameof(jointWorldTransform), "Matrix cannot be inverted.");
 
+            if (jointWorldTransform.M44 == 1) invJoint.M44 = 1; // fix precission loss;
+
             if (meshWorldTransform == Matrix4x4Double.Identity) return invJoint;
 
             return meshWorldTransform * invJoint;
@@ -507,15 +511,16 @@ namespace SharpGLTF.Transforms
 
         #region properties
 
+        /// <inheritdoc/>
+        public int InstancesCount => _LocalMatrices.Length;
+
         /// <summary>
         /// Gets the local matrices for every instanced mesh
         /// </summary>
         public IReadOnlyList<TRANSFORM> LocalMatrices => _LocalMatrices;
 
-        /// <summary>
-        /// Gets the local transforms for every instanced mesh
-        /// </summary>
-        public IReadOnlyList<RigidTransform> WorldTransforms => UpdateInstances();
+        /// <inheritdoc/>
+        public IReadOnlyList<RigidTransform> WorldTransforms => UpdateInstances();        
 
         #endregion
 
