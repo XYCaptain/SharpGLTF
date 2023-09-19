@@ -5,16 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
-using Newtonsoft.Json;
 using SharpGLTF.Collections;
 
 namespace SharpGLTF.Schema2
 {
-    public partial class MeshFeatures : ExtraProperties
+    public partial class StructuralMetadata : ExtraProperties
     {
         private string? _schemastring;
+        private StructuralMetaSchema _schema;
 
-        private Dictionary<String, Dictionary<String, Int32>> _featuretables;
+		private Dictionary<String, Dictionary<String, Int32>> _featuretables;
         private Dictionary<String, Int32> _featuretablescounts;
         private Dictionary<String, string> _featuretableclasses;
 
@@ -49,7 +49,7 @@ namespace SharpGLTF.Schema2
                 {
                     writer.WritePropertyName(pop.Key);
                     writer.WriteStartObject();
-                    writer.WritePropertyName("bufferView");
+                    writer.WritePropertyName("values");
                     writer.WriteNumberValue(pop.Value);
                     writer.WriteEndObject();
                 }
@@ -186,13 +186,13 @@ namespace SharpGLTF.Schema2
         }
     }
 
-    public partial class MeshFeatures
+    public partial class StructuralMetadata
     {
         private readonly ModelRoot _Owner;
 
         public ModelRoot LogicalParent => _Owner;
 
-        internal MeshFeatures(ModelRoot root)
+        internal StructuralMetadata(ModelRoot root)
         {
             _Owner = root;
             _featuretables = new Dictionary<String, Dictionary<String, Int32>>();
@@ -276,21 +276,21 @@ namespace SharpGLTF.Schema2
             Guard.NotNullOrEmpty(schemastring, nameof(schemastring));
             _schemastring = schemastring;
         }
-    }
+	}
 
     public sealed partial class ModelRoot
     {
-        public MeshFeatures GetFeatureMetadata()
+        public StructuralMetadata GetStructuralMetadata()
         {
-            return this.GetExtension<MeshFeatures>();
+            return this.GetExtension<StructuralMetadata>();
         }
 
-        public MeshFeatures UseFeatureMetadata()
+        public StructuralMetadata UseStructuralMetadata()
         {
-            var ext = GetFeatureMetadata();
+            var ext = GetStructuralMetadata();
             if (ext == null)
             {
-                ext = new MeshFeatures(this);
+                ext = new StructuralMetadata(this);
                 this.SetExtension(ext);
             }
 
@@ -299,7 +299,7 @@ namespace SharpGLTF.Schema2
 
         public void RemoveFeatureMetadata()
         {
-            this.RemoveExtensions<MeshFeatures>();
+            this.RemoveExtensions<StructuralMetadata>();
         }
     }
 }

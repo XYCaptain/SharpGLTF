@@ -12,13 +12,13 @@ namespace SharpGLTF.Schema2
 {
     public static partial class Toolkit
     {
-        public static MeshFeatures WithShcema(this MeshFeatures metadata, string shcemaSTRING)
+        public static StructuralMetadata WithShcema(this StructuralMetadata metadata, string shcemaSTRING)
         {
             metadata.SetShcema(shcemaSTRING);
             return metadata;
         }
 
-        public static unsafe MeshFeatures WithFeatureBufferView<T>(this MeshFeatures metadata, string table, string attribute, IReadOnlyList<T> values)
+        public static unsafe StructuralMetadata WithFeatureBufferView<T>(this StructuralMetadata metadata, string table, string attribute, IReadOnlyList<T> values)
                where T : unmanaged
         {
             Guard.NotNull(metadata, nameof(metadata));
@@ -31,7 +31,7 @@ namespace SharpGLTF.Schema2
             return metadata;
         }
 
-        public static MeshFeatures WithFeatureAccessors<T>(this MeshFeatures metadata, IReadOnlyList<T> instances)
+        public static StructuralMetadata WithFeatureAccessors<T>(this StructuralMetadata metadata, IReadOnlyList<T> instances)
         {
             Guard.NotNull(metadata, nameof(metadata));
             Guard.NotNull(instances, nameof(instances));

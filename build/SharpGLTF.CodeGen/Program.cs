@@ -20,7 +20,7 @@ namespace SharpGLTF
 
         static void Main(string[] args)
         {
-            SchemaDownload.Syncronize(Constants.RemoteSchemaRepo, Constants.LocalRepoDirectory);
+            //SchemaDownload.Syncronize(Constants.RemoteSchemaRepo, Constants.LocalRepoDirectory);
 
             var processors = new List<SchemaProcessor>();
 
@@ -44,9 +44,15 @@ namespace SharpGLTF
 
             // cesium outlines
             processors.Add(new CesiumPrimitiveOutlineExtension());
+			//processors.Add(new PrimitiveStructuralMetadata());
+			//processors.Add(new StructuralMetadataSchema());
+			processors.Add(new StructuralMetadataSchema());
 
-            // lights
-            processors.Add(new LightsPunctualExtension());
+
+
+			
+			// lights
+			processors.Add(new LightsPunctualExtension());
 
             // gpu mesh instancing
             processors.Add(new MeshGpuInstancingExtension());

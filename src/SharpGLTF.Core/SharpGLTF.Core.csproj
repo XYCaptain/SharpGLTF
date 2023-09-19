@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>    
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <AssemblyName>SharpGLTF.Core</AssemblyName>
     <RootNamespace>SharpGLTF</RootNamespace>
     <LangVersion>10.0</LangVersion>
@@ -32,6 +32,15 @@
     <None Include="Schema2\Generated\*.cs">
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Schema2\Generated\ext.EXT_structural_metadata_Schema.g.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Schema2\Exts\ext.EXT_mesh_features.cs" />
+    <None Include="Schema2\Exts\ext.EXT_structural_metadata_Schema.cs" />
   </ItemGroup>
 
 </Project>

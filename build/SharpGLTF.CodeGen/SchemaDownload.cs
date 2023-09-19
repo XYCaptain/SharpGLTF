@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LibGit2Sharp;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,7 +33,9 @@ namespace SharpGLTF
                 var r = LibGit2Sharp.Commands.Pull(repo, new LibGit2Sharp.Signature("Anonymous", "anon@anon.com", new DateTimeOffset(DateTime.Now)), options);
 
                 Console.WriteLine($"{remoteUrl} is {r.Status}");
-            }
+
+				Branch remoteBranch = repo.Branches["origin/my-feature-branch"];
+			}
         }
     }
 }

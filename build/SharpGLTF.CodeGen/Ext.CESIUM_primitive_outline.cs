@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace SharpGLTF
 {
-    class CesiumPrimitiveOutlineExtension : SchemaProcessor
+	class CesiumPrimitiveOutlineExtension : SchemaProcessor
     {
         private static string RootSchemaUri => Constants.VendorExtensionPath("CESIUM_primitive_outline", "primitive.CESIUM_primitive_outline.schema.json");
 

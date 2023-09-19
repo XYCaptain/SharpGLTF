@@ -145,4 +145,9 @@ namespace SharpGLTF.Schema2
             this.RemoveExtensions<MeshGpuInstancing>();
         }
     }
+
+    public partial class MeshGpuInstancing
+    {
+
+    }
 }

@@ -39,12 +39,13 @@ namespace SharpGLTF.Schema2
 
             var view = root.CreateBufferView(sizeof(T) * data.Count);
 
-            if (typeof(T) == typeof(int))
+            if (typeof(T) == typeof(Int32))
             {
                 new Memory.IntegerArray(view.Content, IndexEncodingType.UNSIGNED_INT).Fill(data as IReadOnlyList<int>);
                 return view;
             }
-            if (typeof(T) == typeof(Single))
+
+			if (typeof(T) == typeof(Single))
             {
                 new Memory.ScalarArray(view.Content).Fill(data as IReadOnlyList<Single>);
                 return view;
